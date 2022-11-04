@@ -1,4 +1,5 @@
 import { type NextPage } from "next";
+import { signIn } from 'next-auth/react';
 import { trpc } from "../utils/trpc";
 import { Button } from "@mantine/core";
 
@@ -27,7 +28,7 @@ const Home: NextPage = () => {
   return (
     <>
       <Demo />
-      <Button variant="filled" color="grape">
+      <Button variant="filled" color="grape" onClick={() => signIn()}>
         {hello.data?.greeting}
       </Button>
     </>
