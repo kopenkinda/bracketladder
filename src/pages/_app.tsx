@@ -1,26 +1,33 @@
 import type { ColorScheme } from "@mantine/core";
-import { ColorSchemeProvider } from "@mantine/core";
-import { MantineProvider } from "@mantine/core";
+import { ColorSchemeProvider, MantineProvider } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
+import { NotificationsProvider } from "@mantine/notifications";
+import { getCookie, setCookie } from "cookies-next";
 import { type Session } from "next-auth";
 import { getSession, SessionProvider } from "next-auth/react";
+import type { AppProps } from "next/app";
 import { type AppType } from "next/app";
-
-import { trpc } from "../utils/trpc";
-
+import { useEffect, useState } from "react";
 import { RouterTransition } from "../components/RouterTransition";
 import "../styles/globals.css";
-import { NotificationsProvider } from "@mantine/notifications";
-import { ModalsProvider } from "@mantine/modals";
-import { useEffect, useState } from "react";
-import { getCookie, setCookie } from "cookies-next";
+import { trpc } from "../utils/trpc";
 
-const MyApp: AppType<{ session: Session | null; colorScheme: ColorScheme }> = ({
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
+dayjs.locale("fr");
+
+const MyApp = (({
   Component,
   pageProps: { session, ...pageProps },
+}: AppProps & {
+  pageProps: { session: Session | null; colorScheme: ColorScheme };
 }) => {
   const [colorScheme, setColorScheme] = useState<ColorScheme>(
     pageProps.colorScheme
   );
+
   const toggleColorScheme = (value?: ColorScheme) => {
     const nextColorScheme =
       value || (colorScheme === "dark" ? "light" : "dark");
@@ -48,7 +55,11 @@ const MyApp: AppType<{ session: Session | null; colorScheme: ColorScheme }> = ({
       colorScheme={colorScheme}
       toggleColorScheme={toggleColorScheme}
     >
-      <MantineProvider withGlobalStyles withNormalizeCSS>
+      <MantineProvider
+        withGlobalStyles
+        withNormalizeCSS
+        theme={{ loader: "bars", colorScheme }}
+      >
         <RouterTransition />
         <SessionProvider session={session}>
           <ModalsProvider>
@@ -60,23 +71,22 @@ const MyApp: AppType<{ session: Session | null; colorScheme: ColorScheme }> = ({
       </MantineProvider>
     </ColorSchemeProvider>
   );
-};
+}) as AppType<{
+  pageProps: { session: Session | null; colorScheme: ColorScheme };
+}>;
 
 MyApp.getInitialProps = async ({ ctx }) => {
   const session = await getSession(ctx);
   const colorScheme = (getCookie("mantine-color-scheme", ctx) ||
     "light") as ColorScheme;
-  console.log(colorScheme);
-  if (session != null) {
-    return {
-      colorScheme,
-      session: session,
-    };
-  }
   return {
-    session: null,
-    colorScheme,
+    pageProps: {
+      session,
+      colorScheme,
+    },
   };
 };
 
-export default trpc.withTRPC(MyApp);
+const App = trpc.withTRPC(MyApp);
+
+export default App;
