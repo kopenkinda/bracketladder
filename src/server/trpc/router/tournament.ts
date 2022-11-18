@@ -177,4 +177,16 @@ export const tournamentRouter = router({
         });
       }
     }),
+  getTournamentByOwner: publicProcedure
+      .input(z.string({ description: 'Owner ID' }))
+      .query(({input}) => {
+        return (
+          prisma?.tournament.findMany({
+            where: {
+              ownerId: input,
+            },
+            include: { owner: true },
+          }) || null
+        );
+        }),
 });
