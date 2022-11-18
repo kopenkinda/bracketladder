@@ -1,20 +1,52 @@
+import Image from 'next/image';
 import React, { type FC } from 'react';
 import { type Tournament } from '@prisma/client';
-import { getGameImage } from '../utils/tournament';
 
 type TournamentCardProps = {
   tournament: Tournament;
 };
 
 const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
+  const image = () => {
+    switch (tournament.game) {
+      case 'Tekken':
+        return (
+          <Image
+            src='/tekken.png'
+            width={200}
+            height={200}
+            alt={tournament.name}
+          />
+        );
+      case 'StreetFighter':
+        return (
+          <Image
+            src='/street-fighter.png'
+            width={200}
+            height={200}
+            alt={tournament.name}
+          />
+        );
+      default:
+        return (
+          <Image
+            src='/ssbu.svg'
+            width={200}
+            height={200}
+            alt={tournament.name}
+          />
+        );
+    }
+  };
   return (
     <a
-      className='flex flex-col rounded-xl border border-2 border-solid cursor-pointer
-	 border-black p-4 shadow-xl no-underline text-black
-	 [&>div]:flex-1 block' href={`tournament/${ tournament.id }`}
+      className='flex cursor-pointer flex-col rounded-xl border-2
+	 border-solid border-black p-4 text-black no-underline
+	 shadow-xl [&>div]:flex-1'
+      href={`tournament/${tournament.id}`}
     >
       <div className='[&>img]:mx-auto [&>img]:h-40 [&>img]:w-full [&>img]:object-contain'>
-        { getGameImage(tournament) }
+        {image()}
       </div>
       <div className='[&>p]:my-0'>
         <p className={'font-bold'}>{tournament.name}</p>
