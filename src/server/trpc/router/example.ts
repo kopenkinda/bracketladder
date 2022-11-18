@@ -13,6 +13,7 @@ export const exampleRouter = router({
     }),
   // route hello : /api/example/getall
   getAll: publicProcedure.query(({ ctx }) => {
-    return ctx.prisma.example.findMany();
+    // return ctx.prisma.example.findMany();
+    return []
   }),
 });

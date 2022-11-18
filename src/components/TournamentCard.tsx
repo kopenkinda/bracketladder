@@ -1,25 +1,12 @@
-import Image from 'next/image';
-import IconSSBU from 'public/ssbu.svg';
-import IconStreetFighter from 'public/street-fighter.png';
-import IconTekken from 'public/tekken.png';
 import React, { type FC } from 'react';
 import { type Tournament } from '@prisma/client';
+import { getGameImage } from '../utils/tournament';
 
 type TournamentCardProps = {
   tournament: Tournament;
 };
 
 const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
-  const image = () => {
-    switch (tournament.game) {
-      case 'Tekken':
-        return <Image src={IconTekken} alt={tournament.name} />;
-      case 'StreetFighter':
-        return <Image src={IconStreetFighter} alt={tournament.name} />;
-      default:
-        return <Image src={IconSSBU} alt={tournament.name} />;
-    }
-  };
   return (
     <a
       className='flex flex-col rounded-xl border border-2 border-solid cursor-pointer
@@ -27,7 +14,7 @@ const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
 	 [&>div]:flex-1 block' href={`tournament/${ tournament.id }`}
     >
       <div className='[&>img]:mx-auto [&>img]:h-40 [&>img]:w-full [&>img]:object-contain'>
-        {image()}
+        { getGameImage(tournament) }
       </div>
       <div className='[&>p]:my-0'>
         <p className={'font-bold'}>{tournament.name}</p>
