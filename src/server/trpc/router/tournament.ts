@@ -1,11 +1,24 @@
+import { Games } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
 
 export const tournamentRouter = router({
-  getAll: publicProcedure.query(() => {
-    return prisma?.tournament.findMany({ include: { owner: true } }) || [];
-  }),
+  getAllPublic: publicProcedure
+    .input(
+      z.enum([Games.SmashBros, Games.StreetFighter, Games.Tekken]).optional()
+    )
+    .query(async ({ ctx, input }) => {
+      return await ctx.prisma.tournament.findMany({
+        where: {
+          type: {
+            not: 'Private',
+          },
+          game: input,
+        },
+        include: { owner: true },
+      });
+    }),
   getOne: publicProcedure
     .input(z.string({ description: 'Tournament ID' }))
     .query(({ input }) => {
@@ -178,15 +191,15 @@ export const tournamentRouter = router({
       }
     }),
   getTournamentByOwner: publicProcedure
-      .input(z.string({ description: 'Owner ID' }))
-      .query(({input}) => {
-        return (
-          prisma?.tournament.findMany({
-            where: {
-              ownerId: input,
-            },
-            include: { owner: true },
-          }) || null
-        );
-        }),
+    .input(z.string({ description: 'Owner ID' }))
+    .query(({ input }) => {
+      return (
+        prisma?.tournament.findMany({
+          where: {
+            ownerId: input,
+          },
+          include: { owner: true },
+        }) || null
+      );
+    }),
 });

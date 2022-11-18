@@ -1,4 +1,4 @@
-import { Card, Center, Text } from '@mantine/core';
+import { Badge, Card, Center, Text } from '@mantine/core';
 import { type Tournament } from '@prisma/client';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -30,6 +30,13 @@ const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
       <Text size='xl' weight='bold'>
         {tournament.name}
       </Text>
+      <Badge
+        color={tournament.type === 'Official' ? 'yellow' : 'blue'}
+        radius='xs'
+        variant='outline'
+      >
+        {tournament.type}
+      </Badge>
       <Text size='sm'>Region: {tournament.region}</Text>
       <Text size='sm'>
         Players:{' '}
