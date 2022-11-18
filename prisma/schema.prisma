@@ -15,7 +15,7 @@ datasource db {
 }
 
 enum Games {
-  Tekken 
+  Tekken
   StreetFighter
   SmashBros
 }
@@ -80,7 +80,7 @@ model User {
   roundsWon                 Round[]      @relation(name: "round_winner")
   isPlayer1                 Match[]      @relation("match_p1")
   isPlayer2                 Match[]      @relation("match_p2")
-  role                      Roles       @default(User)
+  role                      Roles        @default(User)
 }
 
 model VerificationToken {
@@ -110,19 +110,20 @@ model Whitelist {
 }
 
 model Tournament {
-  id              String     @id @default(cuid())
+  id              String         @id @default(cuid())
   name            String
-  region          Region     @default(Europe)
+  description     String         @db.VarChar(255)
+  region          Region         @default(Europe)
   minPlayers      Int
   maxPlayers      Int
-  owner           User       @relation(name: "tournament_owner", fields: [ownerId], references: [id])
+  owner           User           @relation(name: "tournament_owner", fields: [ownerId], references: [id])
   ownerId         String
   whitelist       Whitelist?
   allocatedServer Boolean
   bracket         Bracket?
-  type            TournamentType     @default(Public)
-  game            Games     @default(Tekken)
-  users           User[]     @relation(name: "tournament_participant")
+  type            TournamentType @default(Public)
+  game            Games          @default(Tekken)
+  users           User[]         @relation(name: "tournament_participant")
 }
 
 model Bracket {

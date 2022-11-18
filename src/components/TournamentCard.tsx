@@ -1,45 +1,49 @@
 import Image from 'next/image';
-import IconSSBU from 'public/ssbu.svg';
-import IconStreetFighter from 'public/street-fighter.png';
-import IconTekken from 'public/tekken.png';
 import React, { type FC } from 'react';
+import { type Tournament } from '@prisma/client';
 
 type TournamentCardProps = {
   tournament: Tournament;
 };
 
-// TODO: Use prisma type instead of this
-export type Tournament = {
-  name: string;
-  region: string;
-  minPlayers: number;
-  maxPlayers: number;
-  game: number;
-  owner: {
-    name: string;
-    nickname: string;
-    region: string;
-    stats: undefined;
-  };
-  whiteList: undefined;
-  bracket: undefined;
-};
-
 const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
   const image = () => {
     switch (tournament.game) {
-      case 1:
-        return <Image src={IconTekken} alt={tournament.name} />;
-      case 2:
-        return <Image src={IconStreetFighter} alt={tournament.name} />;
+      case 'Tekken':
+        return (
+          <Image
+            src='/tekken.png'
+            width={200}
+            height={200}
+            alt={tournament.name}
+          />
+        );
+      case 'StreetFighter':
+        return (
+          <Image
+            src='/street-fighter.png'
+            width={200}
+            height={200}
+            alt={tournament.name}
+          />
+        );
       default:
-        return <Image src={IconSSBU} alt={tournament.name} />;
+        return (
+          <Image
+            src='/ssbu.svg'
+            width={200}
+            height={200}
+            alt={tournament.name}
+          />
+        );
     }
   };
   return (
-    <div
-      className='flex flex-col rounded-xl border border-2 border-solid
-	 border-black p-4 shadow-xl [&>div]:flex-1'
+    <a
+      className='flex cursor-pointer flex-col rounded-xl border-2
+	 border-solid border-black p-4 text-black no-underline
+	 shadow-xl [&>div]:flex-1'
+      href={`tournament/${tournament.id}`}
     >
       <div className='[&>img]:mx-auto [&>img]:h-40 [&>img]:w-full [&>img]:object-contain'>
         {image()}
@@ -51,7 +55,7 @@ const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
           Players : {tournament.minPlayers} - {tournament.maxPlayers}
         </p>
       </div>
-    </div>
+    </a>
   );
 };
 
