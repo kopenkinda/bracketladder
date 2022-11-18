@@ -3,11 +3,10 @@ import {
   Avatar,
   Button,
   Header,
-  Menu,
   useMantineColorScheme,
 } from '@mantine/core';
-import { IconLogin, IconLogout, IconMoonStars, IconSun } from '@tabler/icons';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { IconLogin, IconMoonStars, IconSun } from '@tabler/icons';
+import { signIn, useSession } from 'next-auth/react';
 
 function ColorThemeSwitcher({ className }: { className?: string }) {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -27,11 +26,11 @@ function ColorThemeSwitcher({ className }: { className?: string }) {
 }
 
 export default function AppHeader() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   return (
     <Header height={60} className='z-50 flex items-center' p='md'>
       <ColorThemeSwitcher className='ml-auto' />
-      {session === null && (
+      {status !== 'authenticated' && (
         <Button
           className='ml-2'
           onClick={() => signIn()}
@@ -40,19 +39,9 @@ export default function AppHeader() {
           Log in
         </Button>
       )}
-      {session !== null && (
-        <>
-          <Avatar src={session.user?.image} className='ml-2' />
-          <Button
-            color='red'
-            className='ml-2'
-            rightIcon={<IconLogout size={18} />}
-            onClick={() => signOut()}
-          >
-            Log out
-          </Button>
-        </>
-      )}
+      {status === 'authenticated' ? (
+        <Avatar src={session.user?.image} className='ml-2' />
+      ) : null}
     </Header>
   );
 }
