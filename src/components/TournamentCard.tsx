@@ -1,64 +1,51 @@
-import { useMantineTheme } from '@mantine/core';
+import { Card, Center, Text } from '@mantine/core';
+import { type Tournament } from '@prisma/client';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { type FC } from 'react';
-import { type Tournament } from '@prisma/client';
+import { type FC } from 'react';
 
 type TournamentCardProps = {
   tournament: Tournament;
 };
 
 const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
-  const image = () => {
+  const image = (() => {
     switch (tournament.game) {
       case 'Tekken':
-        return (
-          <Image
-            src='/tekken.png'
-            width={200}
-            height={200}
-            alt={tournament.name}
-          />
-        );
+        return '/tekken.png';
       case 'StreetFighter':
-        return (
-          <Image
-            src='/street-fighter.png'
-            width={200}
-            height={200}
-            alt={tournament.name}
-          />
-        );
+        return '/street-fighter.png';
       default:
-        return (
-          <Image
-            src='/ssbu.svg'
-            width={200}
-            height={200}
-            alt={tournament.name}
-          />
-        );
+        return '/ssbu.svg';
     }
-  };
-  const theme = useMantineTheme()
+  })();
+
   return (
-    <Link
-      className={ `flex cursor-pointer flex-col rounded-xl border-2
-        border-solid border-black p-4 no-underline
-        shadow-xl [&>div]:flex-1 ${theme.colorScheme === 'dark' ? 'text-white' : 'text-black'}` }
-      href={`tournament/${tournament.id}`}
-    >
-      <div className='[&>img]:mx-auto [&>img]:h-40 [&>img]:w-full [&>img]:object-contain'>
-        {image()}
-      </div>
-      <div className='[&>p]:my-0'>
-        <p className={'font-bold'}>{tournament.name}</p>
-        <p className={'text-sm opacity-70'}>Region : {tournament.region}</p>
-        <p className={'text-md'}>
-          Players : {tournament.minPlayers} - {tournament.maxPlayers}
-        </p>
-      </div>
-    </Link>
+    <Card withBorder component={Link} href={`/tournament/${tournament.id}`}>
+      <Card.Section>
+        <Center>
+          <Image src={image} alt={tournament.name} width={300} height={200} />
+        </Center>
+      </Card.Section>
+      <Text size='xl' weight='bold'>
+        {tournament.name}
+      </Text>
+      <Text size='sm'>Region: {tournament.region}</Text>
+      <Text size='sm'>
+        Players:{' '}
+        <Text component='span' weight='bold'>
+          {tournament.minPlayers}
+        </Text>
+        {tournament.maxPlayers > tournament.minPlayers ? (
+          <>
+            {' - '}
+            <Text component='span' weight='bold'>
+              {tournament.maxPlayers}
+            </Text>
+          </>
+        ) : null}
+      </Text>
+    </Card>
   );
 };
 
