@@ -1,26 +1,11 @@
 import { SimpleGrid, useMantineTheme } from '@mantine/core';
-
 import { type NextPage } from 'next';
 import TournamentCard from '../components/TournamentCard';
+import { trpc } from '../utils/trpc';
 
 const Home: NextPage = () => {
+  const tournaments = trpc.tournament.getAll.useQuery();
   const theme = useMantineTheme();
-
-  const testTournament = {
-    name: 'Test Tournament',
-    region: 'NA',
-    minPlayers: 4,
-    maxPlayers: 8,
-    game: 2,
-    owner: {
-      name: 'Robin',
-      nickname: 'RoTour',
-      region: 'NA',
-      stats: undefined,
-    },
-    whiteList: undefined,
-    bracket: undefined,
-  };
 
   return (
     <>
@@ -36,12 +21,9 @@ const Home: NextPage = () => {
         ]}
         className={'p-4'}
       >
-        <TournamentCard tournament={testTournament} />
-        <TournamentCard tournament={testTournament} />
-        <TournamentCard tournament={testTournament} />
-        <TournamentCard tournament={testTournament} />
-        <TournamentCard tournament={testTournament} />
-        <TournamentCard tournament={testTournament} />
+        {tournaments.data?.map((tournament, idx) => (
+          <TournamentCard key={idx} tournament={tournament} />
+        ))}
       </SimpleGrid>
     </>
   );
