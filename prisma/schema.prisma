@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   // NOTE: When using postgresql, mysql or sqlserver, uncomment the @db.Text annotations in model Account below
   // Further reading:
   // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
@@ -14,10 +14,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Example {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum Games {
+  Tekken 
+  StreetFighter
+  SmashBros
+}
+
+enum Roles {
+  Admin
+  Organizer
+  User
+}
+
+enum Region {
+  Europe
+  America
+  Oceanie
+}
+
+enum TournamentType {
+  Official
+  Public
+  Private
 }
 
 // Necessary for Next auth
@@ -48,13 +66,21 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
+  id                        String       @id @default(cuid())
+  name                      String?
+  email                     String?      @unique
+  emailVerified             DateTime?
+  image                     String?
+  accounts                  Account[]
+  sessions                  Session[]
+  statistiques              Statistics?
+  whitelist                 Whitelist[]
+  ownsTournaments           Tournament[] @relation(name: "tournament_owner")
+  particiaptesInTournaments Tournament[] @relation(name: "tournament_participant")
+  roundsWon                 Round[]      @relation(name: "round_winner")
+  isPlayer1                 Match[]      @relation("match_p1")
+  isPlayer2                 Match[]      @relation("match_p2")
+  role                      Roles       @default(User)
 }
 
 model VerificationToken {
@@ -63,4 +89,72 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Statistics {
+  id                String @id @default(cuid())
+  userId            String @unique
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wins              Int    @default(0)
+  losses            Int    @default(0)
+  tournamentsAmount Int    @default(0)
+  avgPlace          Float  @default(0)
+  points            Int    @default(0)
+}
+
+model Whitelist {
+  id           String     @id @default(cuid())
+  users        User[]
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId String     @unique
+}
+
+model Tournament {
+  id              String     @id @default(cuid())
+  name            String
+  region          Region     @default(Europe)
+  minPlayers      Int
+  maxPlayers      Int
+  owner           User       @relation(name: "tournament_owner", fields: [ownerId], references: [id])
+  ownerId         String
+  whitelist       Whitelist?
+  allocatedServer Boolean
+  bracket         Bracket?
+  type            TournamentType     @default(Public)
+  game            Games     @default(Tekken)
+  users           User[]     @relation(name: "tournament_participant")
+}
+
+model Bracket {
+  id           String         @id @default(cuid())
+  tournament   Tournament     @relation(fields: [tournamentId], references: [id])
+  tournamentId String         @unique
+  levels       BracketLevel[]
+}
+
+model BracketLevel {
+  id        String  @id @default(cuid())
+  bestOf    Int
+  rounds    Round[]
+  bracket   Bracket @relation(fields: [bracketId], references: [id])
+  bracketId String  @unique
+}
+
+model Round {
+  id             String       @id @default(cuid())
+  bracketLevel   BracketLevel @relation(fields: [bracketLevelId], references: [id])
+  bracketLevelId String       @unique
+  winner         User?        @relation(name: "round_winner", fields: [winnerId], references: [id])
+  winnerId       String?
+  matches        Match[]
+}
+
+model Match {
+  id        String  @id @default(cuid())
+  round     Round   @relation(fields: [roundId], references: [id])
+  roundId   String  @unique
+  player1   User?   @relation(name: "match_p1", fields: [player1Id], references: [id])
+  player1Id String?
+  player2   User?   @relation(name: "match_p2", fields: [player2Id], references: [id])
+  player2Id String?
 }
