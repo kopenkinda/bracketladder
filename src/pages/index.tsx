@@ -1,12 +1,9 @@
-import { Button, SimpleGrid, useMantineTheme } from '@mantine/core';
+import { SimpleGrid, useMantineTheme } from '@mantine/core';
 
 import { type NextPage } from 'next';
-import { signIn } from 'next-auth/react';
 import TournamentCard from '../components/TournamentCard';
-import { trpc } from '../utils/trpc';
 
 const Home: NextPage = () => {
-  const hello = trpc.example.hello.useQuery({ text: 'from tRPC' }, {});
   const theme = useMantineTheme();
 
   const testTournament = {
@@ -46,12 +43,6 @@ const Home: NextPage = () => {
         <TournamentCard tournament={testTournament} />
         <TournamentCard tournament={testTournament} />
       </SimpleGrid>
-      {/*<div className="grid grid-cols-3 gap-4">*/}
-
-      {/*</div>*/}
-      <Button variant='filled' color='grape' onClick={() => signIn()}>
-        {hello.data?.greeting}
-      </Button>
     </>
   );
 };

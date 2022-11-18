@@ -2,7 +2,8 @@ import {
   ActionIcon,
   Avatar,
   Button,
-  Header, Image,
+  Header,
+  Image,
   Menu,
   useMantineColorScheme,
 } from '@mantine/core';
@@ -29,7 +30,7 @@ function ColorThemeSwitcher({ className }: { className?: string }) {
 }
 
 export default function AppHeader() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   return (
     <Header height={60} className='z-50 flex items-center' p='md'>
       <Link href='/'>
@@ -39,7 +40,7 @@ export default function AppHeader() {
             />
       </Link>
       <ColorThemeSwitcher className='ml-auto' />
-      {session === null && (
+      {status !== 'authenticated' && (
         <Button
           className='ml-2'
           onClick={() => signIn()}
@@ -48,21 +49,9 @@ export default function AppHeader() {
           Log in
         </Button>
       )}
-      {session !== null && (
-        <>
-          <Link href="/profile">
-            <Avatar src={session.user?.image} className='ml-2' />
-          </Link>
-          <Button
-            color='red'
-            className='ml-2'
-            rightIcon={<IconLogout size={18} />}
-            onClick={() => signOut()}
-          >
-            Log out
-          </Button>
-        </>
-      )}
+      {status === 'authenticated' ? (
+        <Avatar component={Link} href="/profile" src={session.user?.image} className='ml-2' />
+      ) : null}
     </Header>
   );
 }
