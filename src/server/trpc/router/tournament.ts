@@ -16,6 +16,13 @@ export const tournamentRouter = router({
         }) || null
       );
     }),
+  getByOwner: protectedProcedure
+    .input(z.string({ description: 'Owner ID' }))
+    .query(({ input }) => {
+      return prisma?.tournament.findMany({
+        where: { ownerId: input },
+      });
+    }),
   create: protectedProcedure
     .input(
       z.object({
