@@ -1,4 +1,6 @@
+import { useMantineTheme } from '@mantine/core';
 import Image from 'next/image';
+import Link from 'next/link';
 import React, { type FC } from 'react';
 import { type Tournament } from '@prisma/client';
 
@@ -38,11 +40,12 @@ const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
         );
     }
   };
+  const theme = useMantineTheme()
   return (
-    <a
-      className='flex cursor-pointer flex-col rounded-xl border-2
-	 border-solid border-black p-4 text-black no-underline
-	 shadow-xl [&>div]:flex-1'
+    <Link
+      className={ `flex cursor-pointer flex-col rounded-xl border-2
+        border-solid border-black p-4 no-underline
+        shadow-xl [&>div]:flex-1 ${theme.colorScheme === 'dark' ? 'text-white' : 'text-black'}` }
       href={`tournament/${tournament.id}`}
     >
       <div className='[&>img]:mx-auto [&>img]:h-40 [&>img]:w-full [&>img]:object-contain'>
@@ -55,7 +58,7 @@ const TournamentCard: FC<TournamentCardProps> = ({ tournament }) => {
           Players : {tournament.minPlayers} - {tournament.maxPlayers}
         </p>
       </div>
-    </a>
+    </Link>
   );
 };
 
