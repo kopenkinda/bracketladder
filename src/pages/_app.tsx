@@ -14,6 +14,7 @@ import { trpc } from "../utils/trpc";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import DefaultLayout from "../components/DefaultLayout";
 
 dayjs.extend(relativeTime);
 dayjs.locale("fr");
@@ -64,7 +65,9 @@ const MyApp = (({
         <SessionProvider session={session}>
           <ModalsProvider>
             <NotificationsProvider>
-              <Component {...pageProps} />
+              <DefaultLayout>
+                <Component {...pageProps} />
+              </DefaultLayout>
             </NotificationsProvider>
           </ModalsProvider>
         </SessionProvider>
