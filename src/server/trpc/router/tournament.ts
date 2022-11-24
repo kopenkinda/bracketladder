@@ -177,4 +177,18 @@ export const tournamentRouter = router({
         });
       }
     }),
+  
+  tournamentParticipation: protectedProcedure
+    .query(async ({ ctx }) => {
+      return await ctx.prisma.tournament.findMany({
+        where: {
+          users: {
+            some: {
+              id: ctx.session.user.id,
+            },
+          },
+        },
+      });
+    }),
+  
 });

@@ -1,8 +1,12 @@
 import { type NextPage } from 'next';
 import { Avatar } from '@mantine/core';
 import useUser from '../hooks/useUser';
+import { trpc } from '../utils/trpc';
 
 const Profile: NextPage = () => {
+
+  const {data: tournaments} = trpc.tournament.tournamentParticipation.useQuery();
+
   const user = useUser();
   if (user === undefined) return null;
 
@@ -19,7 +23,13 @@ const Profile: NextPage = () => {
       </div>
       <div className='mt-16'>
         <h3>Mes Participations :</h3>
-        <div className='grid grid-cols-6 gap-4 overflow-x-auto'></div>
+        <div className='grid grid-cols-6 gap-4 overflow-x-auto'>
+          <ul>
+            {tournaments?.map((tournament) => (
+              <li key={tournament.id}>{tournament.name}</li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
