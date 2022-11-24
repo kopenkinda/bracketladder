@@ -4,13 +4,12 @@ import {
   Button,
   Header,
   Image,
-  Menu,
   useMantineColorScheme,
 } from '@mantine/core';
-import { IconLogin, IconLogout, IconMoonStars, IconSun } from '@tabler/icons';
-import { signIn, signOut, useSession } from 'next-auth/react';
-import Link from "next/link";
-import logo from '../../assets/logo.gif'
+import { IconLogin, IconMoonStars, IconSun } from '@tabler/icons';
+import { signIn, useSession } from 'next-auth/react';
+import Link from 'next/link';
+import logo from '../../assets/logo.gif';
 
 function ColorThemeSwitcher({ className }: { className?: string }) {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
@@ -34,23 +33,25 @@ export default function AppHeader() {
   return (
     <Header height={60} className='z-50 flex items-center' p='md'>
       <Link href='/'>
-            <Image
-                src={logo.src}
-                alt='Bracket Ladder Logo'
-            />
+        <Image src={logo.src} alt='Bracket Ladder Logo' width={220}/>
       </Link>
       <ColorThemeSwitcher className='ml-auto' />
       {status !== 'authenticated' && (
         <Button
           className='ml-2'
-          onClick={() => signIn()}
+          onClick={() => signIn('discord')}
           rightIcon={<IconLogin size={18} />}
         >
           Log in
         </Button>
       )}
       {status === 'authenticated' ? (
-        <Avatar component={Link} href="/profile" src={session.user?.image} className='ml-2' />
+        <Avatar
+          component={Link}
+          href='/profile'
+          src={session.user?.image}
+          className='ml-2'
+        />
       ) : null}
     </Header>
   );

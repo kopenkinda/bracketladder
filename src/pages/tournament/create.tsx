@@ -11,6 +11,7 @@ import {
   TextInput,
   UnstyledButton,
   useMantineColorScheme,
+  useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import type { Games, Tournament } from '@prisma/client';
@@ -137,7 +138,8 @@ const GameCard = ({
   active: boolean;
   onClick: () => void;
 }) => {
-  const theme = useMantineColorScheme();
+  const colorScheme = useMantineColorScheme();
+  const theme = useMantineTheme();
   const gameImg = (
     {
       SmashBros: '/ssbu.svg',
@@ -149,9 +151,13 @@ const GameCard = ({
     <UnstyledButton onClick={onClick} className='grow'>
       <Card
         withBorder
-        bg={
-          active ? (theme.colorScheme === 'dark' ? 'dark' : 'blue') : undefined
-        }
+        sx={{
+          backgroundColor: active
+            ? colorScheme.colorScheme === 'dark'
+              ? theme.colors.dark[9]
+              : theme.colors.blue[6]
+            : undefined,
+        }}
       >
         <Center>
           <Image src={gameImg} alt={game} width={200} height={200} />
