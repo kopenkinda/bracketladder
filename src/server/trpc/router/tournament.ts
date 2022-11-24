@@ -190,6 +190,18 @@ export const tournamentRouter = router({
         });
       }
     }),
+  tournamentParticipation: protectedProcedure
+    .query(async ({ ctx }) => {
+      return await ctx.prisma.tournament.findMany({
+        where: {
+          users: {
+            some: {
+              id: ctx.session.user.id,
+            },
+          },
+        },
+      });
+    }),
   getTournamentByOwner: publicProcedure
     .input(z.string({ description: 'Owner ID' }))
     .query(({ input }) => {
