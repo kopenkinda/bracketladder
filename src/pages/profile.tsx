@@ -6,14 +6,15 @@ import TournamentCard from '../components/TournamentCard';
 
 const Profile: NextPage = () => {
 
-  const { data: tournaments } = trpc.tournament.tournamentParticipation.useQuery();
+  const { data: participatingTournaments } = trpc.tournament.tournamentParticipation.useQuery();
 
   const user = useUser();
-  if (user === undefined) return null;
-  const tournaments = trpc.tournament.getTournamentByOwner.useQuery(
-    user.id as string
+
+  const { data: ownedTournaments } = trpc.tournament.getTournamentByOwner.useQuery(
+    user?.id as string,
   );
-  
+
+  if (user === undefined) return null;
 
   return (
     <div className='m-10'>
@@ -25,7 +26,7 @@ const Profile: NextPage = () => {
       <div className='mt-32'>
         <h3>Mes tournois :</h3>
         <div className='grid grid-cols-6 gap-4 overflow-x-auto'>
-          {tournaments.data?.map((tournament, idx) => (
+          {ownedTournaments?.map((tournament, idx) => (
             <TournamentCard key={idx} tournament={tournament} />
           ))}
         </div>
@@ -33,11 +34,9 @@ const Profile: NextPage = () => {
       <div className='mt-16'>
         <h3>Mes Participations :</h3>
         <div className='grid grid-cols-6 gap-4 overflow-x-auto'>
-          <ul>
-            {tournaments?.map((tournament) => (
-              <li key={tournament.id}>{tournament.name}</li>
-            ))}
-          </ul>
+          {participatingTournaments?.map((tournament, idx) => (
+            <TournamentCard key={idx} tournament={tournament} />
+          ))}
         </div>
       </div>
     </div>

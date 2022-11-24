@@ -5,9 +5,7 @@ import React from 'react';
 import { getGameImageUrl } from '../../utils/tournament';
 import { trpc } from '../../utils/trpc';
 
-type tournamentDetailsProps = null;
-
-const TournamentDetails: NextPage<tournamentDetailsProps> = () => {
+const TournamentDetails: NextPage = () => {
 	const router = useRouter();
 	const { id } = router.query;
 	const tournament = trpc.tournament.getOne.useQuery(id as string);
