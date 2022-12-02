@@ -33,7 +33,7 @@ export default function AppHeader() {
   return (
     <Header height={60} className='z-50 flex items-center' p='md'>
       <Link href='/'>
-        <Image src={logo.src} alt='Bracket Ladder Logo' width={220}/>
+        <Image src={logo.src} alt='Bracket Ladder Logo' width={220} />
       </Link>
       <ColorThemeSwitcher className='ml-auto' />
       {status !== 'authenticated' && (
