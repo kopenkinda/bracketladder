@@ -2,6 +2,7 @@ import { Games } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
+import { showNotification } from "@mantine/notifications";
 
 export const tournamentRouter = router({
   getAllPublic: publicProcedure
@@ -214,4 +215,49 @@ export const tournamentRouter = router({
         }) || null
       );
     }),
+
+  startTournament: protectedProcedure
+      .input(z.object({ tournamentId: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const tournament = await ctx.prisma.tournament.findUnique({
+                where: {
+                    id: input.tournamentId,
+                },
+            });
+            if (!tournament) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Tournament not found',
+                });
+            }
+            const bracket = await ctx.prisma.bracket.findUnique({
+                where: {
+                    tournamentId: input.tournamentId,
+                }
+            });
+            if (!bracket) {
+                throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: 'Bracket not found',
+                });
+            }
+            if (tournament.ownerId === ctx.session.user.id) {
+                return await ctx.prisma.tournament.update({
+                    where: {
+                        id: input.tournamentId,
+                    },
+                    data: {
+                        state: true,
+                    },
+                });
+            } else {
+                return (
+                    showNotification({
+                        title: 'Error Join',
+                        message: 'You are not allowed to start this tournament',
+                    })
+                )
+            }
+        }),
+
 });

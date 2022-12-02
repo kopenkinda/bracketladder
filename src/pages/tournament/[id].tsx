@@ -5,11 +5,15 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import { getGameImageUrl } from '../../utils/tournament';
 import { trpc } from '../../utils/trpc';
+import { showNotification } from "@mantine/notifications";
+import {IconCheck} from "@tabler/icons";
+import useUser from "../../hooks/useUser";
 
 const TournamentDetails: NextPage = () => {
   const router = useRouter();
   const { status } = useSession();
   const { id } = router.query;
+  const user = useUser();
   const tournament = trpc.tournament.getOne.useQuery(id as string);
 
   const { mutateAsync: joinTournament, isLoading } =
@@ -17,6 +21,8 @@ const TournamentDetails: NextPage = () => {
   const { mutateAsync: leaveTournament, isLoading: isLeaving } =
     trpc.tournament.leaveTournament.useMutation();
   trpc.tournament.create.useMutation();
+  const {mutateAsync: startTournament, isLoading: isStarting} =
+      trpc.tournament.startTournament.useMutation();
 
   return (
     <div>
@@ -58,6 +64,12 @@ const TournamentDetails: NextPage = () => {
               <Button
                 onClick={async () => {
                   await joinTournament({ tournamentId: id as string });
+                  showNotification({
+                    title: "Join Tournament",
+                    message: "You have successfully joined the tournament",
+                    icon: <IconCheck />,
+                    color: 'green',
+                  })
                   router.push(`/tournament/${id}`);
                 }}
                 disabled={isLoading}
@@ -71,6 +83,12 @@ const TournamentDetails: NextPage = () => {
               <Button
                 onClick={async () => {
                   await leaveTournament({ tournamentId: id as string });
+                  showNotification({
+                    title: "Leave Tournament",
+                    message: "You have leave the tournament",
+                    icon: <IconCheck />,
+                    color: 'green',
+                  })
                   router.push(`/tournament/${id}`);
                 }}
                 disabled={isLeaving}
@@ -79,6 +97,27 @@ const TournamentDetails: NextPage = () => {
               </Button>
             )}
           </div>
+          {tournament.data && tournament.data.owner.id === user?.id && (
+              <div className={'pr-6'}>
+                {tournament.data && (
+                    <Button
+                        onClick={async () => {
+                          await startTournament({ tournamentId: id as string });
+                          showNotification({
+                            title: "Tournament started",
+                            message: "The tournament has started",
+                            icon: <IconCheck />,
+                            color: 'green',
+                          })
+                        }}
+                        color = "green"
+                        disabled={isStarting}
+                    >
+                      Start Tournament
+                    </Button>
+                )}
+              </div>
+          )}
         </div>
       ) : null}
     </div>

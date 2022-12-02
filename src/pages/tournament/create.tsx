@@ -19,6 +19,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import useUser from '../../hooks/useUser';
 import { trpc } from '../../utils/trpc';
+import {showNotification} from "@mantine/notifications";
 
 export default function CreateTournamentPage() {
   const user = useUser();
@@ -58,6 +59,10 @@ export default function CreateTournamentPage() {
         onSubmit={form.onSubmit((values) => {
           createTournament(values).then((createdTournament) => {
             router.push(`/tournament/${createdTournament.id}`);
+            showNotification({
+              title: 'Tournament created',
+              message: `Tournament ${createdTournament.name} created`,
+            });
           });
         })}
       >
