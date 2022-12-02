@@ -1,7 +1,9 @@
 import { Games } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
+import type { InviteTokenData } from './mail';
 
 export const tournamentRouter = router({
   getAllPublic: publicProcedure
@@ -21,13 +23,23 @@ export const tournamentRouter = router({
     }),
   getOne: publicProcedure
     .input(z.string({ description: 'Tournament ID' }))
-    .query(({ input }) => {
+    .query(({ input, ctx }) => {
       return (
-        prisma?.tournament.findUnique({
+        ctx.prisma.tournament.findUnique({
           where: { id: input },
           include: { owner: true },
         }) || null
       );
+    }),
+  getByOwner: protectedProcedure
+    .input(z.string({ description: 'Owner ID' }))
+    .query(({ ctx, input }) => {
+      return prisma?.tournament.findMany({
+        where: {
+          ownerId: input,
+          type: input === ctx.session.user.id ? undefined : { not: 'Private' },
+        },
+      });
     }),
   create: protectedProcedure
     .input(
@@ -190,18 +202,39 @@ export const tournamentRouter = router({
         });
       }
     }),
-  tournamentParticipation: protectedProcedure
-    .query(async ({ ctx }) => {
-      return await ctx.prisma.tournament.findMany({
-        where: {
-          users: {
-            some: {
-              id: ctx.session.user.id,
+  validateInviteToken: protectedProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const secret = process.env.JWT_SECRET;
+      try {
+        const content = jwt.verify(
+          input.token,
+          secret as string
+        ) as InviteTokenData;
+        const tournament = await ctx.prisma.tournament.update({
+          where: { id: content.tournamentId },
+          data: {
+            users: {
+              connect: { id: ctx.session.user.id },
             },
           },
-        },
-      });
+        });
+        return { tournament };
+      } catch (e) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Invalid token' });
+      }
     }),
+  tournamentParticipation: protectedProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.tournament.findMany({
+      where: {
+        users: {
+          some: {
+            id: ctx.session.user.id,
+          },
+        },
+      },
+    });
+  }),
   getTournamentByOwner: publicProcedure
     .input(z.string({ description: 'Owner ID' }))
     .query(({ input }) => {
