@@ -5,15 +5,25 @@ import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { getGameImageUrl } from '../../utils/tournament';
 import { trpc } from '../../utils/trpc';
+import { showNotification } from '@mantine/notifications';
+import { IconCheck } from '@tabler/icons';
+import useUser from '../../hooks/useUser';
 
-type tournamentDetailsProps = null;
-
-const TournamentDetails: NextPage<tournamentDetailsProps> = () => {
+const TournamentDetails: NextPage = () => {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { status, data: session } = useSession();
   const { id } = router.query;
-  const { mutateAsync: sendInviteMail } = trpc.mail.sendInvite.useMutation();
+  const user = useUser();
   const tournament = trpc.tournament.getOne.useQuery(id as string);
+
+  const { mutateAsync: joinTournament, isLoading } =
+    trpc.tournament.joinTournament.useMutation();
+  const { mutateAsync: leaveTournament, isLoading: isLeaving } =
+    trpc.tournament.leaveTournament.useMutation();
+  const { mutateAsync: startTournament, isLoading: isStarting } =
+    trpc.tournament.startTournament.useMutation();
+  const { mutateAsync: sendInviteMail } = trpc.mail.sendInvite.useMutation();
+
   const [inviteInput, setInviteInput] = useState<string>('');
 
   const sendInvite = async () => {
@@ -73,6 +83,69 @@ const TournamentDetails: NextPage<tournamentDetailsProps> = () => {
           </p>
         </div>
       )}
+      {status === 'authenticated' ? (
+        <div className={'flex'}>
+          <div className={'pr-6'}>
+            {tournament.data && (
+              <Button
+                onClick={async () => {
+                  await joinTournament({ tournamentId: id as string });
+                  showNotification({
+                    title: 'Join Tournament',
+                    message: 'You have successfully joined the tournament',
+                    icon: <IconCheck />,
+                    color: 'green',
+                  });
+                  router.push(`/tournament/${id}`);
+                }}
+                disabled={isLoading}
+              >
+                Join Tournament
+              </Button>
+            )}
+          </div>
+          <div className={'pr-6'}>
+            {tournament.data && (
+              <Button
+                onClick={async () => {
+                  await leaveTournament({ tournamentId: id as string });
+                  showNotification({
+                    title: 'Leave Tournament',
+                    message: 'You have leave the tournament',
+                    icon: <IconCheck />,
+                    color: 'green',
+                  });
+                  router.push(`/tournament/${id}`);
+                }}
+                disabled={isLeaving}
+              >
+                Leave Tournament
+              </Button>
+            )}
+          </div>
+          {tournament.data && tournament.data.owner.id === user?.id && (
+            <div className={'pr-6'}>
+              {tournament.data && (
+                <Button
+                  onClick={async () => {
+                    await startTournament({ tournamentId: id as string });
+                    showNotification({
+                      title: 'Tournament started',
+                      message: 'The tournament has started',
+                      icon: <IconCheck />,
+                      color: 'green',
+                    });
+                  }}
+                  color='green'
+                  disabled={isStarting}
+                >
+                  Start Tournament
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 };
