@@ -25,7 +25,7 @@ export const tournamentRouter = router({
       return (
         prisma?.tournament.findUnique({
           where: { id: input },
-          include: { owner: true },
+          include: { owner: true, users: true, whitelist: true },
         }) || null
       );
     }),
@@ -213,22 +213,26 @@ export const tournamentRouter = router({
         }) || null
       );
     }),
-    // getTournamentParticipants: publicProcedure
-    // .input(z.string({ description: 'Tournament ID' }))
-    // .query(({ input }) => {
-    //   return (
-    //     prisma?.tournament.findUnique({
-    //       where: {
-    //         id: input,
-    //       },
-    //       include: { users: true },
-    //     }) || null
-    //   );
-    // }),
-    // getSession: publicProcedure
-    // .input(z.string({ description: 'Session ID' }))
-    // .query(({ ctx }) => {
-    //   return ctx.session.user.id;
-    // })
-    
+  tournamentCountPlayers: protectedProcedure
+    .input(z.string({ description: 'Tournament Count Player' }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: {
+          id: input,
+        },
+      });
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+
+      return await ctx.prisma.tournament.count({
+        where: {
+          id: input,
+        },
+      });
+    }),
 });

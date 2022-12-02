@@ -11,8 +11,6 @@ const TournamentDetails: NextPage = () => {
   const { status } = useSession();
   const { id } = router.query;
   const tournament = trpc.tournament.getOne.useQuery(id as string);
-  // const tournamentParticipation = trpc.tournament.getTournamentParticipants.useQuery(id as string);
-  // const userSession = trpc.tournament.getUserID.useQuery(id as string);
   const tournamentParticipation = trpc.tournament.tournamentParticipation.useQuery();
 
   const { mutateAsync: joinTournament, isLoading } =
@@ -55,12 +53,12 @@ const TournamentDetails: NextPage = () => {
         </div>
       )}
       {status === 'authenticated' ? (
-        console.log("User Session : " + tournamentParticipation.data),
+        console.log("Tournament Player Count : " + tournament.data?.users?.length),
+        console.log("Tournament Max Players : " + tournament.data?.maxPlayers),
         <div className={'flex'}>
-          {!tournamentParticipation.data?.map(t => t.id).includes(tournament.data?.id ?? "") && (
+          {tournament.data && !tournamentParticipation.data?.map(t => t.id).includes(tournament.data?.id ?? "") && tournament.data?.maxPlayers > (tournament.data?.users?.length ?? 0) && (
             <div className={'pr-6'}>
-              {tournament.data && (
-                <Button
+                {(<Button
                   onClick={async () => {
                     await joinTournament({ tournamentId: id as string });
                     await tournament.refetch();
@@ -69,13 +67,13 @@ const TournamentDetails: NextPage = () => {
                   disabled={isLoading}
                 >
                   Join Tournament
-                </Button>
-              )}
+                </Button>)}
             </div>
           )}
-          {tournamentParticipation.data?.map(t => t.id).includes(tournament.data?.id ?? "") && (
+
+          {tournament.data && tournamentParticipation.data?.map(t => t.id).includes(tournament.data?.id ?? "") && (
             <div className={'pr-6'}>
-              {tournament.data && (
+              {(
                 <Button
                   onClick={async () => {
                     await leaveTournament({ tournamentId: id as string });
