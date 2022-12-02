@@ -190,18 +190,17 @@ export const tournamentRouter = router({
         });
       }
     }),
-  tournamentParticipation: protectedProcedure
-    .query(async ({ ctx }) => {
-      return await ctx.prisma.tournament.findMany({
-        where: {
-          users: {
-            some: {
-              id: ctx.session.user.id,
-            },
+  tournamentParticipation: protectedProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.tournament.findMany({
+      where: {
+        users: {
+          some: {
+            id: ctx.session.user.id,
           },
         },
-      });
-    }),
+      },
+    });
+  }),
   getTournamentByOwner: publicProcedure
     .input(z.string({ description: 'Owner ID' }))
     .query(({ input }) => {
@@ -214,4 +213,22 @@ export const tournamentRouter = router({
         }) || null
       );
     }),
+    // getTournamentParticipants: publicProcedure
+    // .input(z.string({ description: 'Tournament ID' }))
+    // .query(({ input }) => {
+    //   return (
+    //     prisma?.tournament.findUnique({
+    //       where: {
+    //         id: input,
+    //       },
+    //       include: { users: true },
+    //     }) || null
+    //   );
+    // }),
+    // getSession: publicProcedure
+    // .input(z.string({ description: 'Session ID' }))
+    // .query(({ ctx }) => {
+    //   return ctx.session.user.id;
+    // })
+    
 });
