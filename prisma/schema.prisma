@@ -126,6 +126,8 @@ model Tournament {
   type            TournamentType @default(Public)
   game            Games          @default(Tekken)
   users           User[]         @relation(name: "tournament_participant")
+  state           Boolean        @default(false)
+  startDate       DateTime       @default(now())
 }
 
 model Bracket {
