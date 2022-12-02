@@ -1,25 +1,24 @@
 import { useRouter } from 'next/router';
-import React, { type FC, useEffect } from 'react';
+import { useEffect } from 'react';
+import type { FC } from 'react';
 import { trpc } from '../utils/trpc';
 
 type AcceptInviteProps = Record<string, never>;
 
-const AcceptInvite: FC < AcceptInviteProps > = () => {
-	const { token } = useRouter().query;
-	const { data } = trpc.tournament.validateInviteToken.useQuery({token: token?.toString() ?? ""});
-	const { mutateAsync: acceptInvite } = trpc.tournament.joinTournament.useMutation();
-	const navigate = useRouter()
+const AcceptInvite: FC<AcceptInviteProps> = () => {
+  const { token } = useRouter().query;
+  const { mutateAsync: acceptInvite } =
+    trpc.tournament.validateInviteToken.useMutation();
 
-	useEffect(() => {
-		if (data) {
-			acceptInvite({tournamentId: data.tournamentId})
-				.then(() => navigate.replace("/tournament/" + data.tournamentId))
-		}
-	}, [data, acceptInvite])
+  const navigate = useRouter();
 
-	return <div>
-		token: { token }
-	</div>;
+  useEffect(() => {
+    acceptInvite({ token: token as string }).then((data) =>
+      navigate.replace('/tournament/' + data.tournament.id)
+    );
+  }, [acceptInvite, navigate, token]);
+
+  return <div>token: {token}</div>;
 };
 
 export default AcceptInvite;
