@@ -406,4 +406,33 @@ export const tournamentRouter = router({
         },
       });
     }),
+    deleteTournament: protectedProcedure
+    .input(z.object({ tournamentId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: {
+          id: input.tournamentId,
+        },
+      });
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+
+      if (tournament.ownerId === ctx.session.user.id) {
+        return await ctx.prisma.tournament.delete({
+          where: {
+            id: input.tournamentId,
+          },
+        });
+      } else {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not allowed to delete this tournament',
+        });
+      }
+    }),
 });

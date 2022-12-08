@@ -20,6 +20,7 @@ import { useRouter } from 'next/router';
 import useUser from '../../hooks/useUser';
 import { trpc } from '../../utils/trpc';
 import {showNotification} from "@mantine/notifications";
+import { DatePicker } from '@mantine/dates';
 
 export default function CreateTournamentPage() {
   const user = useUser();
@@ -118,6 +119,12 @@ export default function CreateTournamentPage() {
             min={form.values.minPlayers}
             {...form.getInputProps('maxPlayers')}
           />
+          <DatePicker
+            label='Start date'
+            withAsterisk
+            minDate={new Date()}
+            {...form.getInputProps('startDate')}>
+          </DatePicker>
           <Switch
             label='Allocated server'
             description="If you don't have a server, we'll allocate one for you (Requires premium)"
