@@ -3,17 +3,16 @@
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["referentialIntegrity"]
 }
 
 datasource db {
-  provider = "mysql"
+  provider     = "mysql"
   // NOTE: When using postgresql, mysql or sqlserver, uncomment the @db.Text annotations in model Account below
   // Further reading:
   // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
   // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
-  url      = env("DATABASE_URL")
-  referentialIntegrity = "prisma"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 enum Games {
@@ -57,6 +56,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -65,6 +65,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model User {
@@ -76,7 +78,6 @@ model User {
   accounts                  Account[]
   sessions                  Session[]
   statistiques              Statistics?
-  whitelist                 Whitelist[]
   ownsTournaments           Tournament[] @relation(name: "tournament_owner")
   particiaptesInTournaments Tournament[] @relation(name: "tournament_participant")
   roundsWon                 Round[]      @relation(name: "round_winner")
@@ -104,13 +105,6 @@ model Statistics {
   points            Int    @default(0)
 }
 
-model Whitelist {
-  id           String     @id @default(cuid())
-  users        User[]
-  tournament   Tournament @relation(fields: [tournamentId], references: [id])
-  tournamentId String     @unique
-}
-
 model Tournament {
   id              String         @id @default(cuid())
   name            String
@@ -120,7 +114,6 @@ model Tournament {
   maxPlayers      Int
   owner           User           @relation(name: "tournament_owner", fields: [ownerId], references: [id])
   ownerId         String
-  whitelist       Whitelist?
   allocatedServer Boolean
   bracket         Bracket?
   type            TournamentType @default(Public)
@@ -128,6 +121,8 @@ model Tournament {
   users           User[]         @relation(name: "tournament_participant")
   state           Boolean        @default(false)
   startDate       DateTime       @default(now())
+
+  @@index([ownerId])
 }
 
 model Bracket {
@@ -142,24 +137,33 @@ model BracketLevel {
   bestOf    Int
   rounds    Round[]
   bracket   Bracket @relation(fields: [bracketId], references: [id])
-  bracketId String  @unique
+  bracketId String
+
+  @@index([bracketId])
 }
 
 model Round {
   id             String       @id @default(cuid())
   bracketLevel   BracketLevel @relation(fields: [bracketLevelId], references: [id])
-  bracketLevelId String       @unique
+  bracketLevelId String
   winner         User?        @relation(name: "round_winner", fields: [winnerId], references: [id])
   winnerId       String?
   matches        Match[]
+
+  @@index([winnerId])
+  @@index([bracketLevelId])
 }
 
 model Match {
   id        String  @id @default(cuid())
   round     Round   @relation(fields: [roundId], references: [id])
-  roundId   String  @unique
+  roundId   String
   player1   User?   @relation(name: "match_p1", fields: [player1Id], references: [id])
   player1Id String?
   player2   User?   @relation(name: "match_p2", fields: [player2Id], references: [id])
   player2Id String?
+
+  @@index([roundId])
+  @@index([player1Id])
+  @@index([player2Id])
 }

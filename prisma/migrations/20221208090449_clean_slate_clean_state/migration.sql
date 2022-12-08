@@ -13,6 +13,7 @@ CREATE TABLE `Account` (
     `id_token` VARCHAR(191) NULL,
     `session_state` VARCHAR(191) NULL,
 
+    INDEX `Account_userId_idx`(`userId`),
     UNIQUE INDEX `Account_provider_providerAccountId_key`(`provider`, `providerAccountId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -25,6 +26,7 @@ CREATE TABLE `Session` (
     `expires` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Session_sessionToken_key`(`sessionToken`),
+    INDEX `Session_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -86,7 +88,10 @@ CREATE TABLE `Tournament` (
     `allocatedServer` BOOLEAN NOT NULL,
     `type` ENUM('Official', 'Public', 'Private') NOT NULL DEFAULT 'Public',
     `game` ENUM('Tekken', 'StreetFighter', 'SmashBros') NOT NULL DEFAULT 'Tekken',
+    `state` BOOLEAN NOT NULL DEFAULT false,
+    `startDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    INDEX `Tournament_ownerId_idx`(`ownerId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -105,7 +110,7 @@ CREATE TABLE `BracketLevel` (
     `bestOf` INTEGER NOT NULL,
     `bracketId` VARCHAR(191) NOT NULL,
 
-    UNIQUE INDEX `BracketLevel_bracketId_key`(`bracketId`),
+    INDEX `BracketLevel_bracketId_idx`(`bracketId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -115,7 +120,8 @@ CREATE TABLE `Round` (
     `bracketLevelId` VARCHAR(191) NOT NULL,
     `winnerId` VARCHAR(191) NULL,
 
-    UNIQUE INDEX `Round_bracketLevelId_key`(`bracketLevelId`),
+    INDEX `Round_winnerId_idx`(`winnerId`),
+    INDEX `Round_bracketLevelId_idx`(`bracketLevelId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -126,7 +132,9 @@ CREATE TABLE `Match` (
     `player1Id` VARCHAR(191) NULL,
     `player2Id` VARCHAR(191) NULL,
 
-    UNIQUE INDEX `Match_roundId_key`(`roundId`),
+    INDEX `Match_roundId_idx`(`roundId`),
+    INDEX `Match_player1Id_idx`(`player1Id`),
+    INDEX `Match_player2Id_idx`(`player2Id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -147,51 +155,3 @@ CREATE TABLE `_tournament_participant` (
     UNIQUE INDEX `_tournament_participant_AB_unique`(`A`, `B`),
     INDEX `_tournament_participant_B_index`(`B`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- AddForeignKey
-ALTER TABLE `Account` ADD CONSTRAINT `Account_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Session` ADD CONSTRAINT `Session_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Statistics` ADD CONSTRAINT `Statistics_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Whitelist` ADD CONSTRAINT `Whitelist_tournamentId_fkey` FOREIGN KEY (`tournamentId`) REFERENCES `Tournament`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Tournament` ADD CONSTRAINT `Tournament_ownerId_fkey` FOREIGN KEY (`ownerId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Bracket` ADD CONSTRAINT `Bracket_tournamentId_fkey` FOREIGN KEY (`tournamentId`) REFERENCES `Tournament`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `BracketLevel` ADD CONSTRAINT `BracketLevel_bracketId_fkey` FOREIGN KEY (`bracketId`) REFERENCES `Bracket`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Round` ADD CONSTRAINT `Round_bracketLevelId_fkey` FOREIGN KEY (`bracketLevelId`) REFERENCES `BracketLevel`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Round` ADD CONSTRAINT `Round_winnerId_fkey` FOREIGN KEY (`winnerId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Match` ADD CONSTRAINT `Match_roundId_fkey` FOREIGN KEY (`roundId`) REFERENCES `Round`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Match` ADD CONSTRAINT `Match_player1Id_fkey` FOREIGN KEY (`player1Id`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Match` ADD CONSTRAINT `Match_player2Id_fkey` FOREIGN KEY (`player2Id`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_UserToWhitelist` ADD CONSTRAINT `_UserToWhitelist_A_fkey` FOREIGN KEY (`A`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_UserToWhitelist` ADD CONSTRAINT `_UserToWhitelist_B_fkey` FOREIGN KEY (`B`) REFERENCES `Whitelist`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_tournament_participant` ADD CONSTRAINT `_tournament_participant_A_fkey` FOREIGN KEY (`A`) REFERENCES `Tournament`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `_tournament_participant` ADD CONSTRAINT `_tournament_participant_B_fkey` FOREIGN KEY (`B`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

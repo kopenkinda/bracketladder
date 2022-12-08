@@ -27,7 +27,7 @@ export const tournamentRouter = router({
       return (
         ctx.prisma.tournament.findUnique({
           where: { id: input },
-          include: { owner: true, users: true, whitelist: true },
+          include: { owner: true, users: true, bracket: true },
         }) || null
       );
     }),
@@ -51,6 +51,7 @@ export const tournamentRouter = router({
         maxPlayers: z.number().max(200).default(8),
         game: z.enum(['SmashBros', 'StreetFighter', 'Tekken']),
         allocatedServer: z.boolean().default(false),
+        startDate: z.date().default(new Date()),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -63,9 +64,10 @@ export const tournamentRouter = router({
           name: input.name,
           game: input.game,
           type: input.type,
+          startDate: input.startDate,
+          state: false,
           owner: { connect: { id: ctx.session.user.id } },
           region: 'Europe',
-          whitelist: input.type === 'Private' ? { create: {} } : undefined,
         },
       });
       return createdTournament;
@@ -138,14 +140,12 @@ export const tournamentRouter = router({
           id: input.tournamentId,
         },
       });
-
       if (!tournament) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Tournament not found',
         });
       }
-
       if (tournament.ownerId === ctx.session.user.id) {
         return await ctx.prisma.tournament.update({
           where: {
@@ -243,7 +243,106 @@ export const tournamentRouter = router({
         }) || null
       );
     }),
-
+  createBracket: protectedProcedure
+    .input(
+      z.object({
+        tournamentId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: { id: input.tournamentId },
+        include: {
+          bracket: true,
+          users: true,
+        },
+      });
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+      if (tournament.ownerId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'You are not allowed to create a bracket for this tournament',
+        });
+      }
+      if (tournament.bracket !== null) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament already has a bracket',
+        });
+      }
+      if (tournament.users.length < tournament.minPlayers) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Not enough players in the tournament',
+        });
+      }
+      const amountOfPlayers = tournament.users.length;
+      const bracket = await ctx.prisma.bracket.create({
+        data: {
+          tournament: { connect: { id: tournament.id } },
+        },
+      });
+      let steps = 1;
+      while (Math.pow(2, steps) < amountOfPlayers) {
+        steps += 1;
+      }
+      for (let i = 0; i < steps; i++) {
+        await ctx.prisma.bracketLevel.create({
+          data: {
+            bracket: { connect: { id: bracket.id } },
+            bestOf: 3,
+          },
+        });
+      }
+      return await ctx.prisma.bracket.findUnique({
+        where: {
+          id: bracket.id,
+        },
+      });
+    }),
+  getBracket: publicProcedure
+    .input(z.object({ tournamentId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: { id: input.tournamentId },
+        include: { bracket: true },
+      });
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+      if (tournament.bracket === null) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament does not have a bracket',
+        });
+      }
+      return await ctx.prisma.bracket.findUnique({
+        where: {
+          id: tournament.bracket.id,
+        },
+        include: {
+          levels: {
+            include: {
+              rounds: {
+                include: {
+                  matches: { include: { player1: true, player2: true } },
+                  winner: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }),
   startTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
