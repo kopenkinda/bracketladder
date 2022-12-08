@@ -24,7 +24,7 @@ import {showNotification} from "@mantine/notifications";
 export default function CreateTournamentPage() {
   const user = useUser();
 
-  const form = useForm<Omit<Tournament, 'region' | 'ownerId' | 'id'>>({
+  const form = useForm<Omit<Tournament, 'region' | 'ownerId' | 'id' | 'state'>>({
     initialValues: {
       name: '',
       description: '',
@@ -33,6 +33,7 @@ export default function CreateTournamentPage() {
       maxPlayers: 8,
       allocatedServer: false,
       game: 'SmashBros',
+      startDate: new Date(),
     },
     transformValues: (values) => ({
       ...values,

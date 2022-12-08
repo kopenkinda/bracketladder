@@ -27,7 +27,7 @@ export const tournamentRouter = router({
       return (
         ctx.prisma.tournament.findUnique({
           where: { id: input },
-          include: { owner: true, users: true, whitelist: true },
+          include: { owner: true, users: true, bracket: true },
         }) || null
       );
     }),
@@ -51,6 +51,7 @@ export const tournamentRouter = router({
         maxPlayers: z.number().max(200).default(8),
         game: z.enum(['SmashBros', 'StreetFighter', 'Tekken']),
         allocatedServer: z.boolean().default(false),
+        startDate: z.date().default(new Date()),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -63,9 +64,10 @@ export const tournamentRouter = router({
           name: input.name,
           game: input.game,
           type: input.type,
+          startDate: input.startDate,
+          state: false,
           owner: { connect: { id: ctx.session.user.id } },
           region: 'Europe',
-          whitelist: input.type === 'Private' ? { create: {} } : undefined,
         },
       });
       return createdTournament;
@@ -138,14 +140,12 @@ export const tournamentRouter = router({
           id: input.tournamentId,
         },
       });
-
       if (!tournament) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Tournament not found',
         });
       }
-
       if (tournament.ownerId === ctx.session.user.id) {
         return await ctx.prisma.tournament.update({
           where: {
@@ -255,7 +255,6 @@ export const tournamentRouter = router({
         include: {
           bracket: true,
           users: true,
-          whitelist: { include: { users: true } },
         },
       });
       if (!tournament) {
@@ -277,29 +276,13 @@ export const tournamentRouter = router({
           message: 'Tournament already has a bracket',
         });
       }
-      let amountOfPlayers = 0;
-      if (tournament.type === 'Private') {
-        if (
-          tournament.whitelist === null ||
-          tournament.whitelist.users.length < tournament.minPlayers
-        ) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Not enough players in the whitelist',
-          });
-        }
-        amountOfPlayers = tournament.whitelist.users.length;
+      if (tournament.users.length < tournament.minPlayers) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Not enough players in the tournament',
+        });
       }
-      console.log({ tournament: JSON.stringify(tournament, null, 2) });
-      if (tournament.type === 'Public') {
-        if (tournament.users.length < tournament.minPlayers) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Not enough players in the tournament',
-          });
-        }
-        amountOfPlayers = tournament.users.length;
-      }
+      const amountOfPlayers = tournament.users.length;
       const bracket = await ctx.prisma.bracket.create({
         data: {
           tournament: { connect: { id: tournament.id } },

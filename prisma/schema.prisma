@@ -78,7 +78,6 @@ model User {
   accounts                  Account[]
   sessions                  Session[]
   statistiques              Statistics?
-  whitelist                 Whitelist[]
   ownsTournaments           Tournament[] @relation(name: "tournament_owner")
   particiaptesInTournaments Tournament[] @relation(name: "tournament_participant")
   roundsWon                 Round[]      @relation(name: "round_winner")
@@ -106,13 +105,6 @@ model Statistics {
   points            Int    @default(0)
 }
 
-model Whitelist {
-  id           String     @id @default(cuid())
-  users        User[]
-  tournament   Tournament @relation(fields: [tournamentId], references: [id])
-  tournamentId String     @unique
-}
-
 model Tournament {
   id              String         @id @default(cuid())
   name            String
@@ -122,7 +114,6 @@ model Tournament {
   maxPlayers      Int
   owner           User           @relation(name: "tournament_owner", fields: [ownerId], references: [id])
   ownerId         String
-  whitelist       Whitelist?
   allocatedServer Boolean
   bracket         Bracket?
   type            TournamentType @default(Public)
