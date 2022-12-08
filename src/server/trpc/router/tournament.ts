@@ -70,7 +70,6 @@ export const tournamentRouter = router({
       });
       return createdTournament;
     }),
-
   joinTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -105,7 +104,6 @@ export const tournamentRouter = router({
         });
       }
     }),
-
   leaveTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -132,7 +130,6 @@ export const tournamentRouter = router({
         },
       });
     }),
-
   addToWhitelist: protectedProcedure
     .input(z.object({ tournamentId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -167,7 +164,6 @@ export const tournamentRouter = router({
         });
       }
     }),
-
   removeFromWhitelist: protectedProcedure
     .input(z.object({ tournamentId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {

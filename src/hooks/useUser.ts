@@ -15,8 +15,11 @@ export default function useUser() {
   }
   return {
     ...session.user,
-    status: (window as unknown as Record<string, boolean>).isPremium
-      ? ('premium' as const)
-      : ('basic' as const),
+    status:
+      'window' in globalThis
+        ? (window as unknown as Record<string, boolean>).isPremium
+          ? ('premium' as const)
+          : ('basic' as const)
+        : ('basic' as const),
   };
 }
