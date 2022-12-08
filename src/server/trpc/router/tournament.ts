@@ -1,7 +1,9 @@
 import { Games } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
+import type { InviteTokenData } from './mail';
 
 export const tournamentRouter = router({
   getAllPublic: publicProcedure
@@ -21,13 +23,23 @@ export const tournamentRouter = router({
     }),
   getOne: publicProcedure
     .input(z.string({ description: 'Tournament ID' }))
-    .query(({ input }) => {
+    .query(({ input, ctx }) => {
       return (
-        prisma?.tournament.findUnique({
+        ctx.prisma.tournament.findUnique({
           where: { id: input },
-          include: { owner: true },
+          include: { owner: true, users: true, whitelist: true },
         }) || null
       );
+    }),
+  getByOwner: protectedProcedure
+    .input(z.string({ description: 'Owner ID' }))
+    .query(({ ctx, input }) => {
+      return prisma?.tournament.findMany({
+        where: {
+          ownerId: input,
+          type: input === ctx.session.user.id ? undefined : { not: 'Private' },
+        },
+      });
     }),
   create: protectedProcedure
     .input(
@@ -58,7 +70,6 @@ export const tournamentRouter = router({
       });
       return createdTournament;
     }),
-
   joinTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -93,7 +104,6 @@ export const tournamentRouter = router({
         });
       }
     }),
-
   leaveTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -120,7 +130,6 @@ export const tournamentRouter = router({
         },
       });
     }),
-
   addToWhitelist: protectedProcedure
     .input(z.object({ tournamentId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -155,7 +164,6 @@ export const tournamentRouter = router({
         });
       }
     }),
-
   removeFromWhitelist: protectedProcedure
     .input(z.object({ tournamentId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -188,6 +196,28 @@ export const tournamentRouter = router({
           code: 'FORBIDDEN',
           message: 'You are not allowed to remove users from this tournament',
         });
+      }
+    }),
+  validateInviteToken: protectedProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const secret = process.env.JWT_SECRET;
+      try {
+        const content = jwt.verify(
+          input.token,
+          secret as string
+        ) as InviteTokenData;
+        const tournament = await ctx.prisma.tournament.update({
+          where: { id: content.tournamentId },
+          data: {
+            users: {
+              connect: { id: ctx.session.user.id },
+            },
+          },
+        });
+        return { tournament };
+      } catch (e) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Invalid token' });
       }
     }),
   tournamentParticipation: protectedProcedure.query(async ({ ctx }) => {
@@ -327,6 +357,69 @@ export const tournamentRouter = router({
               },
             },
           },
+        },
+      });
+    }),
+  startTournament: protectedProcedure
+    .input(z.object({ tournamentId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: {
+          id: input.tournamentId,
+        },
+      });
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+      const bracket = await ctx.prisma.bracket.findUnique({
+        where: {
+          tournamentId: input.tournamentId,
+        },
+      });
+      if (!bracket) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Bracket not found',
+        });
+      }
+      if (tournament.ownerId === ctx.session.user.id) {
+        return await ctx.prisma.tournament.update({
+          where: {
+            id: input.tournamentId,
+          },
+          data: {
+            state: true,
+          },
+        });
+      } else {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not allowed to start this tournament',
+        });
+      }
+    }),
+  tournamentCountPlayers: protectedProcedure
+    .input(z.string({ description: 'Tournament Count Player' }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: {
+          id: input,
+        },
+      });
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+
+      return await ctx.prisma.tournament.count({
+        where: {
+          id: input,
         },
       });
     }),
