@@ -4,10 +4,12 @@ import {
   Center,
   Group,
   Loader,
+  Select,
   Stack,
 } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { IconAlertCircle, IconCheck, IconTournament } from '@tabler/icons';
+import { IconAlertCircle, IconCalendar, IconCheck, IconTournament } from '@tabler/icons';
+import dayjs from 'dayjs';
 import { type NextPage } from 'next';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -16,18 +18,52 @@ import { useState } from 'react';
 import UserPreview from '../../../components/UserPreview';
 import { getGameImageUrl } from '../../../utils/tournament';
 import { trpc } from '../../../utils/trpc';
+import { openConfirmModal } from '@mantine/modals';
 
 const TournamentDetails: NextPage = () => {
   const router = useRouter();
   const { status, data: session } = useSession();
   const { id } = router.query;
   const tournament = trpc.tournament.getOne.useQuery(id as string);
+  const [device, setDevice] = useState('')
+
+
+  const openModal = ()  => openConfirmModal({
+    title: 'Confirm delete tournament',
+    children: 'Are you sure you want to delete this tournament?',
+    labels: { confirm: 'Delete', cancel: 'Cancel' },
+    onConfirm: async () => {
+      await deleteTournament({
+        tournamentId: tournament.data?.id ?? '',
+      });
+      showNotification({
+        title: 'Delete Tournament',
+        message: 'You have successfully deleted the tournament',
+        icon: <IconCheck />,
+        color: 'red',
+      });
+      router.push('/');
+    },
+    onCancel: () => {},
+  });
 
   const isOwner = tournament.data?.ownerId === session?.user?.id ?? false;
   const isMember =
     tournament.data?.users.some(
       (participant) => participant.id === session?.user?.id
     ) ?? false;
+
+  const { mutateAsync: deleteTournament } =
+    trpc.tournament.deleteTournament.useMutation({
+      onError(error) {
+        showNotification({
+          title: 'Delete Tournament',
+          message: error.message,
+          icon: <IconAlertCircle />,
+          color: 'red',
+        });
+      },
+    });
 
   const { mutateAsync: joinTournament, isLoading } =
     trpc.tournament.joinTournament.useMutation({
@@ -117,11 +153,36 @@ const TournamentDetails: NextPage = () => {
         </div>
       )}
       {status === 'authenticated' && tournament.data != null ? (
-        <Group spacing='md'>
+        <Group spacing='md' align='end'>
+
+          {tournament.data.startDate ? (
+            <Stack>
+              <Select
+                label="Device"
+                placeholder="Select a device"
+                searchable
+                data={[
+                  { label: "Apple", value: "apple" },
+                  { label: "Google", value: "google" },
+                  { label: "Outlook", value: "outlook" }
+                ]}
+                onChange={(value) => setDevice(value ?? 'google')}
+                value={device}
+              />
+              <Button<typeof Link>
+                component={Link}
+                href={`https://calndr.link/d/event/?service=${ device }&start=${dayjs(tournament.data.startDate).format('YYYY-MM-DD HH:mm')}&end=&title=${tournament.data.name}&duration=180&timezone=Europe/Paris&location=Bracket Ladder`}
+                target="_blank"
+                leftIcon={<IconCalendar stroke={1.5} size={16} />}
+              >
+                Add to calendar
+              </Button>
+            </Stack>
+          ) : null}
           {tournament.data.bracket === null ? (
             <>
               {!isMember &&
-              tournament.data.maxPlayers > tournament.data.users.length ? (
+                tournament.data.maxPlayers > tournament.data.users.length ? (
                 <Button
                   onClick={async () => {
                     try {
@@ -161,8 +222,12 @@ const TournamentDetails: NextPage = () => {
                 </Button>
               ) : null}
 
+              {tournament.data.id && isOwner ? (
+                <Button onClick={openModal}>Delete Tournament</Button>
+              ) : null}
+
               {isOwner &&
-              tournament.data.users.length >= tournament.data.minPlayers ? (
+                tournament.data.users.length >= tournament.data.minPlayers ? (
                 <Button
                   onClick={async () => {
                     await createBracket({ tournamentId: id as string });
