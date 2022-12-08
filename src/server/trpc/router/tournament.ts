@@ -190,18 +190,17 @@ export const tournamentRouter = router({
         });
       }
     }),
-  tournamentParticipation: protectedProcedure
-    .query(async ({ ctx }) => {
-      return await ctx.prisma.tournament.findMany({
-        where: {
-          users: {
-            some: {
-              id: ctx.session.user.id,
-            },
+  tournamentParticipation: protectedProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.tournament.findMany({
+      where: {
+        users: {
+          some: {
+            id: ctx.session.user.id,
           },
         },
-      });
-    }),
+      },
+    });
+  }),
   getTournamentByOwner: publicProcedure
     .input(z.string({ description: 'Owner ID' }))
     .query(({ input }) => {
@@ -213,5 +212,122 @@ export const tournamentRouter = router({
           include: { owner: true },
         }) || null
       );
+    }),
+  createBracket: protectedProcedure
+    .input(
+      z.object({
+        tournamentId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: { id: input.tournamentId },
+        include: {
+          bracket: true,
+          users: true,
+          whitelist: { include: { users: true } },
+        },
+      });
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+      if (tournament.ownerId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            'You are not allowed to create a bracket for this tournament',
+        });
+      }
+      if (tournament.bracket !== null) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament already has a bracket',
+        });
+      }
+      let amountOfPlayers = 0;
+      if (tournament.type === 'Private') {
+        if (
+          tournament.whitelist === null ||
+          tournament.whitelist.users.length < tournament.minPlayers
+        ) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Not enough players in the whitelist',
+          });
+        }
+        amountOfPlayers = tournament.whitelist.users.length;
+      }
+      console.log({ tournament: JSON.stringify(tournament, null, 2) });
+      if (tournament.type === 'Public') {
+        if (tournament.users.length < tournament.minPlayers) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Not enough players in the tournament',
+          });
+        }
+        amountOfPlayers = tournament.users.length;
+      }
+      const bracket = await ctx.prisma.bracket.create({
+        data: {
+          tournament: { connect: { id: tournament.id } },
+        },
+      });
+      let steps = 1;
+      while (Math.pow(2, steps) < amountOfPlayers) {
+        steps += 1;
+      }
+      for (let i = 0; i < steps; i++) {
+        await ctx.prisma.bracketLevel.create({
+          data: {
+            bracket: { connect: { id: bracket.id } },
+            bestOf: 3,
+          },
+        });
+      }
+      return await ctx.prisma.bracket.findUnique({
+        where: {
+          id: bracket.id,
+        },
+      });
+    }),
+  getBracket: publicProcedure
+    .input(z.object({ tournamentId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: { id: input.tournamentId },
+        include: { bracket: true },
+      });
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+      if (tournament.bracket === null) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament does not have a bracket',
+        });
+      }
+      return await ctx.prisma.bracket.findUnique({
+        where: {
+          id: tournament.bracket.id,
+        },
+        include: {
+          levels: {
+            include: {
+              rounds: {
+                include: {
+                  matches: { include: { player1: true, player2: true } },
+                  winner: true,
+                },
+              },
+            },
+          },
+        },
+      });
     }),
 });
