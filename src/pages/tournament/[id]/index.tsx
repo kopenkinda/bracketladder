@@ -222,7 +222,7 @@ const TournamentDetails: NextPage = () => {
                 </Button>
               ) : null}
 
-              {tournament.data.id && isOwner ? (
+              {tournament.data.id && tournament.data.state === false && isOwner ? (
                 <Button onClick={openModal}>Delete Tournament</Button>
               ) : null}
 
