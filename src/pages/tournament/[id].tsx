@@ -1,13 +1,13 @@
 import { BackgroundImage, Button } from '@mantine/core';
+import { showNotification } from '@mantine/notifications';
+import { IconAlertCircle, IconCheck } from '@tabler/icons';
 import { type NextPage } from 'next';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import useUser from '../../hooks/useUser';
 import { getGameImageUrl } from '../../utils/tournament';
 import { trpc } from '../../utils/trpc';
-import { showNotification } from '@mantine/notifications';
-import { IconCheck } from '@tabler/icons';
-import useUser from '../../hooks/useUser';
 
 const TournamentDetails: NextPage = () => {
   const router = useRouter();
@@ -15,9 +15,20 @@ const TournamentDetails: NextPage = () => {
   const { id } = router.query;
   const user = useUser();
   const tournament = trpc.tournament.getOne.useQuery(id as string);
+  const tournamentParticipation =
+    trpc.tournament.tournamentParticipation.useQuery();
 
   const { mutateAsync: joinTournament, isLoading } =
-    trpc.tournament.joinTournament.useMutation();
+    trpc.tournament.joinTournament.useMutation({
+      onError(error) {
+        showNotification({
+          title: 'Join Tournament',
+          message: error.message,
+          icon: <IconAlertCircle />,
+          color: 'red',
+        });
+      },
+    });
   const { mutateAsync: leaveTournament, isLoading: isLeaving } =
     trpc.tournament.leaveTournament.useMutation();
   const { mutateAsync: startTournament, isLoading: isStarting } =
@@ -86,42 +97,65 @@ const TournamentDetails: NextPage = () => {
       {status === 'authenticated' ? (
         <div className={'flex'}>
           <div className={'pr-6'}>
-            {tournament.data && (
-              <Button
-                onClick={async () => {
-                  await joinTournament({ tournamentId: id as string });
-                  showNotification({
-                    title: 'Join Tournament',
-                    message: 'You have successfully joined the tournament',
-                    icon: <IconCheck />,
-                    color: 'green',
-                  });
-                  router.push(`/tournament/${id}`);
-                }}
-                disabled={isLoading}
-              >
-                Join Tournament
-              </Button>
-            )}
+            {tournament.data &&
+              !tournamentParticipation.data
+                ?.map((t) => t.id)
+                .includes(tournament.data?.id ?? '') &&
+              tournament.data?.maxPlayers >
+                (tournament.data?.users?.length ?? 0) && (
+                <div className={'pr-6'}>
+                  {
+                    <Button
+                      onClick={async () => {
+                        try {
+                          await joinTournament({ tournamentId: id as string });
+                          showNotification({
+                            title: 'Join Tournament',
+                            message:
+                              'You have successfully joined the tournament',
+                            icon: <IconCheck />,
+                            color: 'green',
+                          });
+                        } catch (e) {
+                        } finally {
+                          await tournament.refetch();
+                          await tournamentParticipation.refetch();
+                        }
+                      }}
+                      disabled={isLoading}
+                    >
+                      Join Tournament
+                    </Button>
+                  }
+                </div>
+              )}
           </div>
           <div className={'pr-6'}>
-            {tournament.data && (
-              <Button
-                onClick={async () => {
-                  await leaveTournament({ tournamentId: id as string });
-                  showNotification({
-                    title: 'Leave Tournament',
-                    message: 'You have leave the tournament',
-                    icon: <IconCheck />,
-                    color: 'green',
-                  });
-                  router.push(`/tournament/${id}`);
-                }}
-                disabled={isLeaving}
-              >
-                Leave Tournament
-              </Button>
-            )}
+            {tournament.data &&
+              tournamentParticipation.data
+                ?.map((t) => t.id)
+                .includes(tournament.data?.id ?? '') && (
+                <div className={'pr-6'}>
+                  {
+                    <Button
+                      onClick={async () => {
+                        await leaveTournament({ tournamentId: id as string });
+                        showNotification({
+                          title: 'Leave Tournament',
+                          message: 'You have leave the tournament',
+                          icon: <IconCheck />,
+                          color: 'green',
+                        });
+                        await tournament.refetch();
+                        await tournamentParticipation.refetch();
+                      }}
+                      disabled={isLeaving}
+                    >
+                      Leave Tournament
+                    </Button>
+                  }
+                </div>
+              )}
           </div>
           {tournament.data && tournament.data.owner.id === user?.id && (
             <div className={'pr-6'}>

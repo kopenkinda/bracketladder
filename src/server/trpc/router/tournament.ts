@@ -27,7 +27,7 @@ export const tournamentRouter = router({
       return (
         ctx.prisma.tournament.findUnique({
           where: { id: input },
-          include: { owner: true },
+          include: { owner: true, users: true, whitelist: true },
         }) || null
       );
     }),
@@ -70,7 +70,6 @@ export const tournamentRouter = router({
       });
       return createdTournament;
     }),
-
   joinTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -105,7 +104,6 @@ export const tournamentRouter = router({
         });
       }
     }),
-
   leaveTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -132,7 +130,6 @@ export const tournamentRouter = router({
         },
       });
     }),
-
   addToWhitelist: protectedProcedure
     .input(z.object({ tournamentId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -167,7 +164,6 @@ export const tournamentRouter = router({
         });
       }
     }),
-
   removeFromWhitelist: protectedProcedure
     .input(z.object({ tournamentId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -288,5 +284,27 @@ export const tournamentRouter = router({
           message: 'You are not allowed to start this tournament',
         });
       }
+    }),
+  tournamentCountPlayers: protectedProcedure
+    .input(z.string({ description: 'Tournament Count Player' }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.prisma.tournament.findUnique({
+        where: {
+          id: input,
+        },
+      });
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        });
+      }
+
+      return await ctx.prisma.tournament.count({
+        where: {
+          id: input,
+        },
+      });
     }),
 });
