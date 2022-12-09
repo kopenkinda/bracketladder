@@ -88,7 +88,7 @@ CREATE TABLE `Tournament` (
     `allocatedServer` BOOLEAN NOT NULL,
     `type` ENUM('Official', 'Public', 'Private') NOT NULL DEFAULT 'Public',
     `game` ENUM('Tekken', 'StreetFighter', 'SmashBros') NOT NULL DEFAULT 'Tekken',
-    `state` BOOLEAN NOT NULL DEFAULT false,
+    `state` ENUM('Open', 'Running', 'Closed') NOT NULL DEFAULT 'Open',
     `startDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `Tournament_ownerId_idx`(`ownerId`),

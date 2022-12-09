@@ -233,11 +233,11 @@ const TournamentDetails: NextPage = () => {
                     await createBracket({ tournamentId: id as string });
                     showNotification({
                       title: 'Bracket created',
-                      message:
-                        'You&quot;ve created a bracket for the tournament.',
+                      message: "You've created a bracket for the tournament.",
                       icon: <IconCheck />,
                       color: 'green',
                     });
+                    router.push(`/tournament/${id}/bracket`);
                   }}
                   color='green'
                   disabled={isCreatingBracket}
