@@ -23,3 +23,5 @@ export default function useUser() {
         : ('basic' as const),
   };
 }
+
+export type SessionUser = NonNullable<ReturnType<typeof useUser>>;

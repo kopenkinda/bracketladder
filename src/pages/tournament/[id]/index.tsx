@@ -146,8 +146,7 @@ const TournamentDetails: NextPage = () => {
             <span>Type :</span> {tournament.data.type}
           </p>
           <p>
-            <span>Players :</span> {tournament.data.minPlayers} -{' '}
-            {tournament.data.maxPlayers}
+            <span>Players :</span> {tournament.data.minPlayers}
           </p>
           <p>
             <span>Region :</span> {tournament.data.region}
