@@ -121,6 +121,7 @@ model Tournament {
   users           User[]         @relation(name: "tournament_participant")
   state           Boolean        @default(false)
   startDate       DateTime       @default(now())
+  startHour       DateTime       @default(now())
 
   @@index([ownerId])
 }

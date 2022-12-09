@@ -52,6 +52,7 @@ export const tournamentRouter = router({
         game: z.enum(['SmashBros', 'StreetFighter', 'Tekken']),
         allocatedServer: z.boolean().default(false),
         startDate: z.date().default(new Date()),
+        startHour: z.date().default(new Date()),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -65,6 +66,7 @@ export const tournamentRouter = router({
           game: input.game,
           type: input.type,
           startDate: input.startDate,
+          startHour: input.startHour,
           state: false,
           owner: { connect: { id: ctx.session.user.id } },
           region: 'Europe',

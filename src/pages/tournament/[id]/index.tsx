@@ -26,6 +26,8 @@ const TournamentDetails: NextPage = () => {
   const { id } = router.query;
   const tournament = trpc.tournament.getOne.useQuery(id as string);
   const [device, setDevice] = useState('')
+  const date_and_time = dayjs(tournament.data?.startDate).format('DD/MM/YYYY') + ' ' + dayjs(tournament.data?.startHour).format('HH:mm')
+  const date_and_time_for_api = new Date(dayjs(tournament.data?.startDate).format('MM-DD-YYYY') + ' ' + dayjs(tournament.data?.startHour).format('HH:mm'))
 
 
   const openModal = ()  => openConfirmModal({
@@ -143,6 +145,9 @@ const TournamentDetails: NextPage = () => {
           <p>
             <span>Owner :</span> {tournament.data.owner.name}
           </p>
+          <p>
+            <span>Start Date :</span> {date_and_time}
+          </p>
           {tournament.data.users.length > 0 ? <p>Participants:</p> : null}
           <Stack>
             {tournament.data.users.map((user) => (
@@ -171,7 +176,7 @@ const TournamentDetails: NextPage = () => {
               />
               <Button<typeof Link>
                 component={Link}
-                href={`https://calndr.link/d/event/?service=${ device }&start=${dayjs(tournament.data.startDate).format('YYYY-MM-DD HH:mm')}&end=&title=${tournament.data.name}&duration=180&timezone=Europe/Paris&location=Bracket Ladder`}
+                href={`https://calndr.link/d/event/?service=${ device }&start=${date_and_time_for_api.toISOString()}&end=&title=${tournament.data.name}&duration=180&timezone=Europe/Paris&location=Bracket Ladder`}
                 target="_blank"
                 leftIcon={<IconCalendar stroke={1.5} size={16} />}
               >
