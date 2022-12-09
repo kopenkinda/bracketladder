@@ -30,7 +30,7 @@ export default function BracketView({
     setStep((current) => (current > 0 ? current - 1 : current));
 
   const { data: session } = useSession();
-  const { mutateAsync: startTournament } =
+  const { mutateAsync: startTournament, isLoading: isStarting } =
     trpc.tournament.startTournament.useMutation();
   const { refetch: refetchTournamentData } =
     trpc.tournament.getBracket.useQuery(
@@ -47,6 +47,7 @@ export default function BracketView({
         bracket.tournament.state === 'Open' ? (
           <Button
             rightIcon={<IconChevronRight stroke={1.5} />}
+            loading={isStarting}
             onClick={async () => {
               await startTournament({ tournamentId: bracket.tournament.id });
               await refetchTournamentData();

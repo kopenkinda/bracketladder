@@ -180,7 +180,7 @@ const TournamentDetails: NextPage = () => {
                       />
                       <Button
                         type='submit'
-                        disabled={isMailSending}
+                        loading={isMailSending}
                         leftIcon={<IconMail stroke={1.5} size={18} />}
                       >
                         Invite
