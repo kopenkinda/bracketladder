@@ -2,9 +2,9 @@ import { Games } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import generateBracketLevelGames from '../../common/genBracketLevelGames';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
 import type { InviteTokenData } from './mail';
-import generateBracketLevelGames from '../../common/genBracketLevelGames';
 
 export const tournamentRouter = router({
   getAllPublic: publicProcedure
@@ -36,7 +36,7 @@ export const tournamentRouter = router({
   getByOwner: protectedProcedure
     .input(z.string({ description: 'Owner ID' }))
     .query(({ ctx, input }) => {
-      return prisma?.tournament.findMany({
+      return ctx.prisma.tournament.findMany({
         where: {
           ownerId: input,
           type: input === ctx.session.user.id ? undefined : { not: 'Private' },
@@ -237,9 +237,9 @@ export const tournamentRouter = router({
   }),
   getTournamentByOwner: publicProcedure
     .input(z.string({ description: 'Owner ID' }))
-    .query(({ input }) => {
+    .query(({ ctx, input }) => {
       return (
-        prisma?.tournament.findMany({
+        ctx.prisma.tournament.findMany({
           where: {
             ownerId: input,
           },
