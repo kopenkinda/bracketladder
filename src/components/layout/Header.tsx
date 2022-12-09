@@ -39,7 +39,7 @@ export default function AppHeader() {
       {status !== 'authenticated' && (
         <Button
           className='ml-2'
-          onClick={() => signIn('discord')}
+          onClick={() => signIn()}
           rightIcon={<IconLogin size={18} />}
         >
           Log in
