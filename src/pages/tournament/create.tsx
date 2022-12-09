@@ -11,23 +11,20 @@ import {
   TextInput,
   UnstyledButton,
   useMantineColorScheme,
-  useMantineTheme,
+  useMantineTheme
 } from '@mantine/core';
+import { DatePicker, TimeInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
+import { showNotification } from "@mantine/notifications";
 import type { Games, Tournament } from '@prisma/client';
+import { IconClock } from '@tabler/icons';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import useUser from '../../hooks/useUser';
 import { trpc } from '../../utils/trpc';
-import {showNotification} from "@mantine/notifications";
-import { DatePicker, TimeInput } from '@mantine/dates';
-import { useState } from 'react';
-import { IconClock } from '@tabler/icons';
 
 export default function CreateTournamentPage() {
   const user = useUser();
-
-  const [timeInput, setTimeInput] = useState(new Date());
 
   const form = useForm<Omit<Tournament, 'region' | 'ownerId' | 'id' | 'state'>>({
     initialValues: {

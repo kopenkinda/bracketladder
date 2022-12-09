@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
 import type { InviteTokenData } from './mail';
-import _ from 'lodash';
 import generateBracketLevelGames from '../../common/genBracketLevelGames';
 
 export const tournamentRouter = router({
@@ -534,7 +533,7 @@ export const tournamentRouter = router({
         userIds: winners,
       });
     }),
-    deleteTournament: protectedProcedure
+  deleteTournament: protectedProcedure
     .input(z.object({ tournamentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const tournament = await ctx.prisma.tournament.findUnique({
