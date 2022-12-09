@@ -162,8 +162,9 @@ export default function CreateTournamentForm({ user }: { user: SessionUser }) {
             {...form.getInputProps('startDate')}
           ></DatePicker>
           <TimeInput
-            label='Pick time'
-            placeholder='Pick time'
+            label='Start time'
+            placeholder='Start time'
+            withAsterisk
             icon={<IconClock size={16} />}
             defaultValue={new Date()}
             {...form.getInputProps('startHour')}
@@ -175,7 +176,7 @@ export default function CreateTournamentForm({ user }: { user: SessionUser }) {
             {...form.getInputProps('allocatedServer')}
           />
         </Group>
-        <Group position='right'>
+        <Group position='right' mt="sm">
           <Button type='submit' loading={isLoading}>
             Create
           </Button>

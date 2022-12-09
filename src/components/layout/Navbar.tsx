@@ -13,7 +13,7 @@ export default function AppNavbar() {
   }
 
   return (
-    <Navbar width={{ base: 300 }} p='xs'>
+    <Navbar width={{ base: 300 }} p='xs' className='hidden sm:block'>
       <Navbar.Section grow>
         <NavbarItem
           icon={<IconTournament size={18} />}
