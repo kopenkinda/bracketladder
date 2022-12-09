@@ -19,13 +19,18 @@ import UserPreview from '../../../components/UserPreview';
 import { getGameImageUrl } from '../../../utils/tournament';
 import { trpc } from '../../../utils/trpc';
 import { openConfirmModal } from '@mantine/modals';
+import dynamic from 'next/dynamic';
+const CalendarSelect = dynamic(() => import('../../../components/CalendarSelect'), { ssr: false });
+
 
 const TournamentDetails: NextPage = () => {
   const router = useRouter();
   const { status, data: session } = useSession();
   const { id } = router.query;
   const tournament = trpc.tournament.getOne.useQuery(id as string);
+/*
   const [device, setDevice] = useState('')
+*/
 
 
   const openModal = ()  => openConfirmModal({
@@ -44,7 +49,7 @@ const TournamentDetails: NextPage = () => {
       });
       router.push('/');
     },
-    onCancel: () => {},
+    onCancel: () => {return undefined}
   });
 
   const isOwner = tournament.data?.ownerId === session?.user?.id ?? false;
@@ -100,6 +105,11 @@ const TournamentDetails: NextPage = () => {
   if (!tournament.data) {
     return <div>Tournament not found</div>;
   }
+
+/*
+  const link = `https://calndr.link/d/event/?service=${ device }&start=${dayjs(tournament.data.startDate).format('YYYY-MM-DD HH:mm')}&end=&title=${tournament.data.name}&duration=180&timezone=Europe/Paris&location=Bracket Ladder`;
+*/
+
   return (
     <div>
       {tournament.isLoading && <div>Loading...</div>}
@@ -157,26 +167,7 @@ const TournamentDetails: NextPage = () => {
 
           {tournament.data.startDate ? (
             <Stack>
-              <Select
-                label="Device"
-                placeholder="Select a device"
-                searchable
-                data={[
-                  { label: "Apple", value: "apple" },
-                  { label: "Google", value: "google" },
-                  { label: "Outlook", value: "outlook" }
-                ]}
-                onChange={(value) => setDevice(value ?? 'google')}
-                value={device}
-              />
-              <Button<typeof Link>
-                component={Link}
-                href={`https://calndr.link/d/event/?service=${ device }&start=${dayjs(tournament.data.startDate).format('YYYY-MM-DD HH:mm')}&end=&title=${tournament.data.name}&duration=180&timezone=Europe/Paris&location=Bracket Ladder`}
-                target="_blank"
-                leftIcon={<IconCalendar stroke={1.5} size={16} />}
-              >
-                Add to calendar
-              </Button>
+              <CalendarSelect tournament={tournament.data} />
             </Stack>
           ) : null}
           {tournament.data.bracket === null ? (

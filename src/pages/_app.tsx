@@ -15,6 +15,7 @@ import { trpc } from '../utils/trpc';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import DefaultLayout from '../components/DefaultLayout';
+import Mogus from "../components/Amongus";
 
 dayjs.extend(relativeTime);
 dayjs.locale('fr');
@@ -68,6 +69,7 @@ const MyApp = (({
               <DefaultLayout>
                 <Component {...pageProps} />
               </DefaultLayout>
+              <Mogus></Mogus>
             </NotificationsProvider>
           </ModalsProvider>
         </SessionProvider>
