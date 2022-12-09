@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router';
 import { trpc } from '../../../utils/trpc';
 import { showNotification } from '@mantine/notifications';
-import { Center, Code, Loader } from '@mantine/core';
+import { Center, Loader } from '@mantine/core';
+import BracketView from '../../../components/BracketView';
 
 export default function BracketPage() {
   const router = useRouter();
@@ -36,5 +37,9 @@ export default function BracketPage() {
     }
     return null;
   }
-  return <Code block>{JSON.stringify(bracket, null, 2)}</Code>;
+  return (
+    <>
+      <BracketView bracket={bracket} />
+    </>
+  );
 }

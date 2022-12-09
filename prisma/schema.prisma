@@ -39,6 +39,12 @@ enum TournamentType {
   Private
 }
 
+enum TournamentState {
+  Open
+  Running
+  Closed
+}
+
 // Necessary for Next auth
 model Account {
   id                String  @id @default(cuid())
@@ -81,6 +87,7 @@ model User {
   ownsTournaments           Tournament[] @relation(name: "tournament_owner")
   particiaptesInTournaments Tournament[] @relation(name: "tournament_participant")
   roundsWon                 Round[]      @relation(name: "round_winner")
+  matchesWon                Match[]      @relation(name: "match_winner")
   isPlayer1                 Match[]      @relation("match_p1")
   isPlayer2                 Match[]      @relation("match_p2")
   role                      Roles        @default(User)
@@ -106,22 +113,22 @@ model Statistics {
 }
 
 model Tournament {
-  id              String         @id @default(cuid())
+  id              String          @id @default(cuid())
   name            String
-  description     String         @db.VarChar(255)
-  region          Region         @default(Europe)
+  description     String          @db.VarChar(255)
+  region          Region          @default(Europe)
   minPlayers      Int
   maxPlayers      Int
-  owner           User           @relation(name: "tournament_owner", fields: [ownerId], references: [id])
+  owner           User            @relation(name: "tournament_owner", fields: [ownerId], references: [id])
   ownerId         String
   allocatedServer Boolean
   bracket         Bracket?
-  type            TournamentType @default(Public)
-  game            Games          @default(Tekken)
-  users           User[]         @relation(name: "tournament_participant")
-  state           Boolean        @default(false)
-  startDate       DateTime       @default(now())
-  startHour       DateTime       @default(now())
+  type            TournamentType  @default(Public)
+  game            Games           @default(Tekken)
+  users           User[]          @relation(name: "tournament_participant")
+  startDate       DateTime        @default(now())
+  startHour       DateTime        @default(now())
+  state           TournamentState @default(Open)
 
   @@index([ownerId])
 }
@@ -163,8 +170,11 @@ model Match {
   player1Id String?
   player2   User?   @relation(name: "match_p2", fields: [player2Id], references: [id])
   player2Id String?
+  winner    User?   @relation(name: "match_winner", fields: [winnerId], references: [id])
+  winnerId  String?
 
   @@index([roundId])
   @@index([player1Id])
   @@index([player2Id])
+  @@index([winnerId])
 }
