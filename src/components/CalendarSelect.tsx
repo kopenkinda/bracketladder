@@ -21,7 +21,7 @@ const CalendarSelect: FC<TournamentProps> = ({ tournament }) => {
     return <div>Tournament not found</div>;
   }
   const date_and_time_for_api = new Date(
-    dayjs(tournament.startDate).format('MM-DD-YYYY') +
+    dayjs(tournament.startDate).format('YYYY-MM-DD') +
       ' ' +
       dayjs(tournament.startHour).format('HH:mm')
   );
