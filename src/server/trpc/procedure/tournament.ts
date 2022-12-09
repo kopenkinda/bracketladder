@@ -9,7 +9,7 @@ const isOwner = t
 		const input = isOwnerInputSchema.safeParse(rawInput);
 		if (!ctx.session || !ctx.session.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
 		if (!input.success) throw new TRPCError({ code: 'BAD_REQUEST' });
-		const tournament = await prisma?.tournament.findUnique({
+		const tournament = await ctx.prisma.tournament.findUnique({
 			where: { id: input.data.tournamentId },
 			include: { owner: true },
 		});
