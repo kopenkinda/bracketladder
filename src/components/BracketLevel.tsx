@@ -33,12 +33,12 @@ function MatchResultsModal(
     () => matchesResults.every((result) => result !== null),
     [matchesResults]
   );
-  const { mutateAsync: assignScoreToMatch } =
+  const { mutateAsync: assignScoreToMatch, isIdle: notAssigning } =
     trpc.tournament.assignScoreToMatch.useMutation();
   const { refetch: refetchTournamentData } =
     trpc.tournament.getBracket.useQuery(
       {
-        tournamentId: props.tournamentId
+        tournamentId: props.tournamentId,
       },
       { enabled: false }
     );
@@ -79,6 +79,7 @@ function MatchResultsModal(
       <Button
         fullWidth
         disabled={!finishedUpdatingScores}
+        loading={!notAssigning}
         onClick={async () => {
           for (const [idx, result] of matchesResults.entries()) {
             await assignScoreToMatch({
