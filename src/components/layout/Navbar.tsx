@@ -1,8 +1,8 @@
 import type { DefaultMantineColor } from '@mantine/core';
 import { Group, Navbar, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
-import Link from 'next/link';
 import { IconLogout, IconTournament } from '@tabler/icons';
 import { signOut, useSession } from 'next-auth/react';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 export default function AppNavbar() {
@@ -13,7 +13,7 @@ export default function AppNavbar() {
   }
 
   return (
-    <Navbar width={{ base: 300 }} p='xs' className='hidden sm:block'>
+    <Navbar width={{ base: 300 }} hiddenBreakpoint='sm' p='xs'>
       <Navbar.Section grow>
         <NavbarItem
           icon={<IconTournament size={18} />}

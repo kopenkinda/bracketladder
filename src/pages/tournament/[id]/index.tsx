@@ -1,14 +1,23 @@
 import {
   BackgroundImage,
+  Badge,
   Button,
+  Card,
   Center,
   Group,
   Loader,
   Stack,
+  TextInput,
 } from '@mantine/core';
 import { openConfirmModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
-import { IconAlertCircle, IconCheck, IconTournament } from '@tabler/icons';
+import {
+  IconAlertCircle,
+  IconAt,
+  IconCheck,
+  IconMail,
+  IconTournament,
+} from '@tabler/icons';
 import dayjs from 'dayjs';
 import { type NextPage } from 'next';
 import { useSession } from 'next-auth/react';
@@ -23,6 +32,12 @@ const CalendarSelect = dynamic(
   () => import('../../../components/CalendarSelect'),
   { ssr: false }
 );
+
+const statusMap = {
+  Open: 'Not started',
+  Running: 'In progress',
+  Closed: 'Finished',
+} as const;
 
 const TournamentDetails: NextPage = () => {
   const router = useRouter();
@@ -85,7 +100,8 @@ const TournamentDetails: NextPage = () => {
     trpc.tournament.leaveTournament.useMutation();
   const { mutateAsync: createBracket, isLoading: isCreatingBracket } =
     trpc.tournament.createBracket.useMutation();
-  const { mutateAsync: sendInviteMail } = trpc.mail.sendInvite.useMutation();
+  const { mutateAsync: sendInviteMail, isLoading: isMailSending } =
+    trpc.mail.sendInvite.useMutation();
 
   const [inviteInput, setInviteInput] = useState<string>('');
 
@@ -111,7 +127,6 @@ const TournamentDetails: NextPage = () => {
     ' ' +
     dayjs(tournament.data?.startHour).format('HH:mm');
 
-
   return (
     <div>
       {tournament.isLoading && <div>Loading...</div>}
@@ -127,21 +142,42 @@ const TournamentDetails: NextPage = () => {
                 {tournament.data.name}
               </h2>
               {isOwner ? (
-                <div className='z-20 flex flex-col'>
-                  <label className='flex flex-col'>Invite to tournament</label>
-                  <div className='flex gap-4'>
-                    <input
-                      type='text'
-                      className='text-sm'
-                      value={inviteInput}
-                      onChange={(e) => setInviteInput(e.target.value)}
-                    />
-                    <Button onClick={sendInvite}>Invite</Button>
-                  </div>
-                </div>
+                <Card withBorder className='z-20' mb='xs' mr='xs'>
+                  <Card.Section<'form'>
+                    p='xs'
+                    component='form'
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      sendInvite();
+                    }}
+                  >
+                    <Stack spacing='xs'>
+                      <TextInput
+                        label='Invite to tournament'
+                        type='email'
+                        value={inviteInput}
+                        required
+                        icon={<IconAt size={14} />}
+                        onChange={(e) => setInviteInput(e.target.value)}
+                      />
+                      <Button
+                        type='submit'
+                        disabled={isMailSending}
+                        leftIcon={<IconMail stroke={1.5} size={18} />}
+                      >
+                        Invite
+                      </Button>
+                    </Stack>
+                  </Card.Section>
+                </Card>
               ) : null}
             </div>
           </BackgroundImage>
+          <p></p>
+          <div>
+            <span>Status:</span>{' '}
+            <Badge>{statusMap[tournament.data.state]}</Badge>
+          </div>
           <p>
             <span>Type :</span> {tournament.data.type}
           </p>
