@@ -4,53 +4,53 @@ import {
   Center,
   Group,
   Loader,
-  Select,
   Stack,
 } from '@mantine/core';
+import { openConfirmModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
-import { IconAlertCircle, IconCalendar, IconCheck, IconTournament } from '@tabler/icons';
+import { IconAlertCircle, IconCheck, IconTournament } from '@tabler/icons';
 import dayjs from 'dayjs';
 import { type NextPage } from 'next';
 import { useSession } from 'next-auth/react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import UserPreview from '../../../components/UserPreview';
 import { getGameImageUrl } from '../../../utils/tournament';
 import { trpc } from '../../../utils/trpc';
-import { openConfirmModal } from '@mantine/modals';
-import dynamic from 'next/dynamic';
-const CalendarSelect = dynamic(() => import('../../../components/CalendarSelect'), { ssr: false });
-
+const CalendarSelect = dynamic(
+  () => import('../../../components/CalendarSelect'),
+  { ssr: false }
+);
 
 const TournamentDetails: NextPage = () => {
   const router = useRouter();
   const { status, data: session } = useSession();
   const { id } = router.query;
   const tournament = trpc.tournament.getOne.useQuery(id as string);
-/*
-  const [device, setDevice] = useState('')
-*/
 
-
-  const openModal = ()  => openConfirmModal({
-    title: 'Confirm delete tournament',
-    children: 'Are you sure you want to delete this tournament?',
-    labels: { confirm: 'Delete', cancel: 'Cancel' },
-    onConfirm: async () => {
-      await deleteTournament({
-        tournamentId: tournament.data?.id ?? '',
-      });
-      showNotification({
-        title: 'Delete Tournament',
-        message: 'You have successfully deleted the tournament',
-        icon: <IconCheck />,
-        color: 'red',
-      });
-      router.push('/');
-    },
-    onCancel: () => {return undefined}
-  });
+  const openModal = () =>
+    openConfirmModal({
+      title: 'Confirm delete tournament',
+      children: 'Are you sure you want to delete this tournament?',
+      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      onConfirm: async () => {
+        await deleteTournament({
+          tournamentId: tournament.data?.id ?? '',
+        });
+        showNotification({
+          title: 'Delete Tournament',
+          message: 'You have successfully deleted the tournament',
+          icon: <IconCheck />,
+          color: 'red',
+        });
+        router.push('/');
+      },
+      onCancel: () => {
+        return undefined;
+      },
+    });
 
   const isOwner = tournament.data?.ownerId === session?.user?.id ?? false;
   const isMember =
@@ -106,9 +106,11 @@ const TournamentDetails: NextPage = () => {
     return <div>Tournament not found</div>;
   }
 
-/*
-  const link = `https://calndr.link/d/event/?service=${ device }&start=${dayjs(tournament.data.startDate).format('YYYY-MM-DD HH:mm')}&end=&title=${tournament.data.name}&duration=180&timezone=Europe/Paris&location=Bracket Ladder`;
-*/
+  const date_and_time =
+    dayjs(tournament.data?.startDate).format('DD/MM/YYYY') +
+    ' ' +
+    dayjs(tournament.data?.startHour).format('HH:mm');
+
 
   return (
     <div>
@@ -153,6 +155,9 @@ const TournamentDetails: NextPage = () => {
           <p>
             <span>Owner :</span> {tournament.data.owner.name}
           </p>
+          <p>
+            <span>Start Date :</span> {date_and_time}
+          </p>
           {tournament.data.users.length > 0 ? <p>Participants:</p> : null}
           <Stack>
             {tournament.data.users.map((user) => (
@@ -164,7 +169,6 @@ const TournamentDetails: NextPage = () => {
       )}
       {status === 'authenticated' && tournament.data != null ? (
         <Group spacing='md' align='end'>
-
           {tournament.data.startDate ? (
             <Stack>
               <CalendarSelect tournament={tournament.data} />
@@ -173,7 +177,7 @@ const TournamentDetails: NextPage = () => {
           {tournament.data.bracket === null ? (
             <>
               {!isMember &&
-                tournament.data.maxPlayers > tournament.data.users.length ? (
+              tournament.data.maxPlayers > tournament.data.users.length ? (
                 <Button
                   onClick={async () => {
                     try {
@@ -213,12 +217,14 @@ const TournamentDetails: NextPage = () => {
                 </Button>
               ) : null}
 
-              {tournament.data.id && tournament.data.state === false && isOwner ? (
+              {tournament.data.id &&
+              tournament.data.state === 'Open' &&
+              isOwner ? (
                 <Button onClick={openModal}>Delete Tournament</Button>
               ) : null}
 
               {isOwner &&
-                tournament.data.users.length >= tournament.data.minPlayers ? (
+              tournament.data.users.length >= tournament.data.minPlayers ? (
                 <Button
                   onClick={async () => {
                     await createBracket({ tournamentId: id as string });

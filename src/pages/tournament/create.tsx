@@ -20,10 +20,14 @@ import { useRouter } from 'next/router';
 import useUser from '../../hooks/useUser';
 import { trpc } from '../../utils/trpc';
 import {showNotification} from "@mantine/notifications";
-import { DatePicker } from '@mantine/dates';
+import { DatePicker, TimeInput } from '@mantine/dates';
+import { useState } from 'react';
+import { IconClock } from '@tabler/icons';
 
 export default function CreateTournamentPage() {
   const user = useUser();
+
+  const [timeInput, setTimeInput] = useState(new Date());
 
   const form = useForm<Omit<Tournament, 'region' | 'ownerId' | 'id' | 'state'>>({
     initialValues: {
@@ -35,6 +39,7 @@ export default function CreateTournamentPage() {
       allocatedServer: false,
       game: 'SmashBros',
       startDate: new Date(),
+      startHour: new Date(),
     },
     transformValues: (values) => ({
       ...values,
@@ -122,9 +127,18 @@ export default function CreateTournamentPage() {
           <DatePicker
             label='Start date'
             withAsterisk
+            inputFormat="YYYY-MM-DD"
+            labelFormat="YYYY-MM"
             minDate={new Date()}
             {...form.getInputProps('startDate')}>
           </DatePicker>
+          <TimeInput
+            label="Pick time"
+            placeholder="Pick time"
+            icon={<IconClock size={16} />}
+            defaultValue={new Date()}
+            {...form.getInputProps('startHour')}
+          />
           <Switch
             label='Allocated server'
             description="If you don't have a server, we'll allocate one for you (Requires premium)"

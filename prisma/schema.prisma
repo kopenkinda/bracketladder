@@ -126,8 +126,9 @@ model Tournament {
   type            TournamentType  @default(Public)
   game            Games           @default(Tekken)
   users           User[]          @relation(name: "tournament_participant")
-  state           TournamentState @default(Open)
   startDate       DateTime        @default(now())
+  startHour       DateTime        @default(now())
+  state           TournamentState @default(Open)
 
   @@index([ownerId])
 }
