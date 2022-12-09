@@ -7,6 +7,7 @@ import {
   Group,
   Loader,
   Stack,
+  Text,
   TextInput,
 } from '@mantine/core';
 import { openConfirmModal } from '@mantine/modals';
@@ -24,7 +25,7 @@ import { useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import UserPreview from '../../../components/UserPreview';
 import { getGameImageUrl } from '../../../utils/tournament';
 import { trpc } from '../../../utils/trpc';
@@ -110,6 +111,23 @@ const TournamentDetails: NextPage = () => {
     await sendInviteMail(payload);
     setInviteInput('');
   };
+  const { data: bracket, refetch: fetchBracket } =
+    trpc.tournament.getBracket.useQuery(
+      {
+        tournamentId: id as string,
+      },
+      {
+        enabled: false,
+      }
+    );
+
+  const winner = bracket?.levels[bracket.levels.length - 1]?.rounds[0]?.winner;
+
+  useEffect(() => {
+    if (tournament.data?.state === 'Closed') {
+      fetchBracket();
+    }
+  }, [fetchBracket, tournament.data?.state]);
 
   if (tournament.isLoading) {
     return (
@@ -193,6 +211,12 @@ const TournamentDetails: NextPage = () => {
           <p>
             <span>Start Date :</span> {date_and_time}
           </p>
+          {tournament.data.state === 'Closed' && winner != null ? (
+            <>
+              <Text>Winner:</Text>
+              <UserPreview user={winner} />
+            </>
+          ) : null}
           {tournament.data.users.length > 0 ? <p>Participants:</p> : null}
           <Stack>
             {tournament.data.users.map((user) => (
