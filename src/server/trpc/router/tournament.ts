@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
 import type { InviteTokenData } from './mail';
+import _ from 'lodash';
+import generateBracketLevelGames from '../../common/genBracketLevelGames';
 
 export const tournamentRouter = router({
   getAllPublic: publicProcedure
@@ -16,6 +18,7 @@ export const tournamentRouter = router({
           type: {
             not: 'Private',
           },
+          state: 'Open',
           game: input,
         },
         include: { owner: true },
@@ -65,7 +68,7 @@ export const tournamentRouter = router({
           game: input.game,
           type: input.type,
           startDate: input.startDate,
-          state: false,
+          state: 'Open',
           owner: { connect: { id: ctx.session.user.id } },
           region: 'Europe',
         },
@@ -293,12 +296,19 @@ export const tournamentRouter = router({
         steps += 1;
       }
       for (let i = 0; i < steps; i++) {
-        await ctx.prisma.bracketLevel.create({
+        const bracketLevel = await ctx.prisma.bracketLevel.create({
           data: {
             bracket: { connect: { id: bracket.id } },
             bestOf: 3,
           },
         });
+        for (let j = 0; j < Math.pow(2, steps - i - 1); j++) {
+          await ctx.prisma.round.create({
+            data: {
+              bracketLevel: { connect: { id: bracketLevel.id } },
+            },
+          });
+        }
       }
       return await ctx.prisma.bracket.findUnique({
         where: {
@@ -330,6 +340,7 @@ export const tournamentRouter = router({
           id: tournament.bracket.id,
         },
         include: {
+          tournament: true,
           levels: {
             include: {
               rounds: {
@@ -350,11 +361,18 @@ export const tournamentRouter = router({
         where: {
           id: input.tournamentId,
         },
+        include: { users: true },
       });
       if (!tournament) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Tournament not found',
+        });
+      }
+      if (tournament.ownerId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You are not allowed to start this tournament',
         });
       }
       const bracket = await ctx.prisma.bracket.findUnique({
@@ -365,45 +383,153 @@ export const tournamentRouter = router({
       if (!bracket) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Bracket not found',
+          message: 'Bracket not found, please create one first',
         });
       }
-      if (tournament.ownerId === ctx.session.user.id) {
-        return await ctx.prisma.tournament.update({
-          where: {
-            id: input.tournamentId,
-          },
-          data: {
-            state: true,
-          },
-        });
-      } else {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You are not allowed to start this tournament',
-        });
-      }
-    }),
-  tournamentCountPlayers: protectedProcedure
-    .input(z.string({ description: 'Tournament Count Player' }))
-    .query(async ({ ctx, input }) => {
-      const tournament = await ctx.prisma.tournament.findUnique({
+      const bracketLevels = await ctx.prisma.bracketLevel.findMany({
         where: {
-          id: input,
+          bracketId: bracket.id,
+        },
+        include: {
+          rounds: true,
         },
       });
-
-      if (!tournament) {
+      const firstLevel = bracketLevels[0];
+      if (firstLevel === undefined) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
+          code: 'BAD_REQUEST',
+          message:
+            'Bracket has no rounds, something went wrong on our end, please create a new tournament',
         });
       }
-
-      return await ctx.prisma.tournament.count({
+      const firstRounds = firstLevel?.rounds ?? [];
+      if (firstRounds.length === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Bracket has no rounds, something went wrong on our end, please create a new tournament',
+        });
+      }
+      const users = tournament.users.map((user) => user.id);
+      await generateBracketLevelGames({
+        prisma: ctx.prisma,
+        rounds: firstRounds,
+        bestOf: firstLevel.bestOf,
+        userIds: users,
+      });
+      return await ctx.prisma.tournament.update({
         where: {
-          id: input,
+          id: input.tournamentId,
         },
+        data: {
+          state: 'Running',
+        },
+      });
+    }),
+  assignScoreToMatch: protectedProcedure
+    .input(
+      z.object({
+        matchId: z.string(),
+        winnerId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const match = await ctx.prisma.match.findUnique({
+        where: { id: input.matchId },
+        include: { round: { include: { matches: true } } },
+      });
+      if (!match) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Match not found',
+        });
+      }
+      const roundDone = match.round.matches.every(
+        (match) => match.id === input.matchId || match.winnerId !== null
+      );
+      await ctx.prisma.match.update({
+        where: {
+          id: input.matchId,
+        },
+        data: {
+          winner: { connect: { id: input.winnerId } },
+        },
+      });
+      if (!roundDone) {
+        return;
+      }
+      const matchWinnerIds = (
+        match.round.matches
+          .map((match) => match.winnerId)
+          .filter((id) => id !== null) as string[]
+      )
+        .concat(input.winnerId)
+        .sort();
+      while (matchWinnerIds.length > 1) {
+        matchWinnerIds.shift();
+        matchWinnerIds.pop();
+      }
+      const winnerId = matchWinnerIds[0];
+      if (!winnerId) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Something went wrong, please try again',
+        });
+      }
+      const finishedRound = await ctx.prisma.round.update({
+        where: {
+          id: match.round.id,
+        },
+        data: {
+          winner: { connect: { id: winnerId } },
+        },
+        include: {
+          bracketLevel: {
+            include: {
+              rounds: true,
+              bracket: { include: { tournament: { select: { id: true } } } },
+            },
+          },
+        },
+      });
+      const levelDone = finishedRound.bracketLevel.rounds.every(
+        (round) => round.winnerId !== null
+      );
+      if (!levelDone) {
+        return;
+      }
+      const winners = finishedRound.bracketLevel.rounds
+        .map((round) => round.winnerId)
+        .filter((id) => id !== null) as string[];
+      const levels = await ctx.prisma.bracketLevel.findMany({
+        where: {
+          bracketId: finishedRound.bracketLevel.bracketId,
+        },
+        include: {
+          rounds: true,
+        },
+      });
+      const levelIndex = levels.findIndex(
+        (_level) => _level.id === finishedRound.bracketLevel.id
+      );
+      const nextLevel = levels[levelIndex + 1];
+      if (nextLevel === undefined) {
+        await ctx.prisma.tournament.update({
+          where: {
+            id: finishedRound.bracketLevel.bracket.tournamentId,
+          },
+          data: {
+            state: 'Closed',
+          },
+        });
+        return;
+      }
+      const nextRounds = nextLevel.rounds;
+      await generateBracketLevelGames({
+        prisma: ctx.prisma,
+        rounds: nextRounds,
+        bestOf: nextLevel.bestOf,
+        userIds: winners,
       });
     }),
 });
