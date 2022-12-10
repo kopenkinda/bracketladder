@@ -50,7 +50,7 @@ function TabContent({ game }: { game?: Games }) {
     >
       {isLoading ? (
         <Center>
-          <Loader />
+          <Loader size='xl' />
         </Center>
       ) : null}
       {tournaments?.map((tournament, idx) => (
