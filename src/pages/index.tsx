@@ -1,4 +1,10 @@
-import { SimpleGrid, Text, useMantineTheme } from '@mantine/core';
+import {
+  Center,
+  Loader,
+  SimpleGrid,
+  Text,
+  useMantineTheme,
+} from '@mantine/core';
 import type { Games } from '@prisma/client';
 import { type NextPage } from 'next';
 import TournamentCard from '../components/TournamentCard';
@@ -26,7 +32,8 @@ const Home: NextPage = () => {
 export default Home;
 
 function TabContent({ game }: { game?: Games }) {
-  const { data: tournaments } = trpc.tournament.getAllPublic.useQuery(game);
+  const { data: tournaments, isLoading } =
+    trpc.tournament.getAllPublic.useQuery(game);
   const theme = useMantineTheme();
 
   return (
@@ -41,6 +48,11 @@ function TabContent({ game }: { game?: Games }) {
       ]}
       className={'p-4'}
     >
+      {isLoading ? (
+        <Center>
+          <Loader />
+        </Center>
+      ) : null}
       {tournaments?.map((tournament, idx) => (
         <TournamentCard key={idx} tournament={tournament} />
       ))}
